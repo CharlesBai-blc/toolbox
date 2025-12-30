@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Card, CardClassification, CardDifficulty } from '../types/card';
+import { useAuth } from '../hooks/useAuth';
 import { createCard, updateCard } from '../services/cardService';
+import { AuthModal } from './AuthModal';
 import './CardFormModal.css';
 
 interface CardFormModalProps {
@@ -13,6 +15,8 @@ const classifications: CardClassification[] = ['sorts', 'searches', 'algorithms'
 const difficulties: CardDifficulty[] = ['easy', 'medium', 'hard'];
 
 export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) {
+  const { isAuthenticated } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const isEditing = !!card;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +36,12 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -93,6 +103,19 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
         </div>
 
         <form onSubmit={handleSubmit} className="card-form">
+          {!isAuthenticated && (
+            <div className="card-form-auth-prompt">
+              <p>You must be signed in to {isEditing ? 'edit' : 'create'} cards.</p>
+              <button
+                type="button"
+                className="card-form-auth-button"
+                onClick={() => setShowAuthModal(true)}
+              >
+                Sign In with Google
+              </button>
+            </div>
+          )}
+
           {error && (
             <div className="card-form-error">
               {error}
@@ -245,13 +268,17 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
             <button
               type="submit"
               className="card-form-button card-form-button-submit"
-              disabled={loading}
+              disabled={loading || !isAuthenticated}
             >
               {loading ? 'Saving...' : isEditing ? 'Update Card' : 'Create Card'}
             </button>
           </div>
         </form>
       </div>
+
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
     </div>
   );
 }

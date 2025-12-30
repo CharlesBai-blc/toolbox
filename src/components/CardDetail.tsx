@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Card } from '../types/card';
+import { useAuth } from '../hooks/useAuth';
 import { CardFormModal } from './CardFormModal';
+import { AuthModal } from './AuthModal';
 import { deleteCard } from '../services/cardService';
 import './CardDetail.css';
 
@@ -13,10 +15,12 @@ interface CardDetailProps {
 type Section = 'code' | 'explanation' | 'leetcode' | 'examples' | 'related';
 
 export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
+  const { isAuthenticated } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('code');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const getDifficultyColor = (difficulty?: string) => {
     switch (difficulty) {
@@ -32,10 +36,19 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
   };
 
   const handleEdit = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
     setShowEditModal(true);
   };
 
   const handleDelete = async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
     if (!showDeleteConfirm) {
       setShowDeleteConfirm(true);
       return;
@@ -182,19 +195,23 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
             </div>
           </div>
           <div className="card-detail-actions">
-            <button
-              className="card-detail-button card-detail-edit"
-              onClick={handleEdit}
-            >
-              Edit
-            </button>
-            <button
-              className="card-detail-button card-detail-delete"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {showDeleteConfirm ? (isDeleting ? 'Deleting...' : 'Confirm Delete') : 'Delete'}
-            </button>
+            {isAuthenticated && (
+              <>
+                <button
+                  className="card-detail-button card-detail-edit"
+                  onClick={handleEdit}
+                >
+                  Edit
+                </button>
+                <button
+                  className="card-detail-button card-detail-delete"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  {showDeleteConfirm ? (isDeleting ? 'Deleting...' : 'Confirm Delete') : 'Delete'}
+                </button>
+              </>
+            )}
             <button className="card-detail-close" onClick={onClose}>×</button>
           </div>
         </div>
@@ -224,6 +241,10 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
           onClose={() => setShowEditModal(false)}
           onSuccess={handleCardUpdated}
         />
+      )}
+
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
     </div>
   );

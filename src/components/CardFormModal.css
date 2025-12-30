@@ -65,6 +65,37 @@
   flex: 1;
 }
 
+.card-form-auth-prompt {
+  background: #1e3a5f;
+  border: 1px solid #5b8fb8;
+  color: #bdc1c6;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.card-form-auth-prompt p {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+}
+
+.card-form-auth-button {
+  padding: 0.5rem 1rem;
+  background: #8ab4f8;
+  color: #202124;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card-form-auth-button:hover {
+  background: #aecbfa;
+}
+
 .card-form-error {
   background: #5c2b29;
   color: #f28b82;
