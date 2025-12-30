@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { getAllCards, migrateHardcodedCards } from '../services/cardService';
+import { getAllCards } from '../services/cardService';
 import type { Card } from '../types/card';
 
 export function useCards() {
@@ -16,9 +16,6 @@ export function useCards() {
       try {
         setLoading(true);
         setError(null);
-
-        // Run migration on first load if needed
-        await migrateHardcodedCards();
 
         // Fetch cards from Supabase
         const fetchedCards = await getAllCards();

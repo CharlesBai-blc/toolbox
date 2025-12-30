@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase';
 import type { Card } from '../types/card';
-import { allCards } from '../data/cards';
 
 // Database schema type (snake_case)
 interface DatabaseCard {
@@ -132,54 +131,4 @@ export async function deleteCard(id: string): Promise<void> {
   }
 }
 
-// Check if migration has already run
-const MIGRATION_KEY = 'toolbox_cards_migrated';
-
-export function hasMigrationRun(): boolean {
-  return localStorage.getItem(MIGRATION_KEY) === 'true';
-}
-
-export function setMigrationComplete(): void {
-  localStorage.setItem(MIGRATION_KEY, 'true');
-}
-
-// Migrate hardcoded cards to Supabase
-export async function migrateHardcodedCards(): Promise<void> {
-  if (hasMigrationRun()) {
-    console.log('Migration already completed');
-    return;
-  }
-
-  try {
-    // Check if cards already exist in database
-    const { data: existingCards } = await supabase
-      .from('cards')
-      .select('id')
-      .limit(1);
-
-    if (existingCards && existingCards.length > 0) {
-      console.log('Cards already exist in database, skipping migration');
-      setMigrationComplete();
-      return;
-    }
-
-    // Migrate all hardcoded cards
-    const cardsToInsert = allCards.map(card => cardToDb(card));
-    
-    const { error } = await supabase
-      .from('cards')
-      .insert(cardsToInsert);
-
-    if (error) {
-      console.error('Error migrating cards:', error);
-      throw new Error(`Failed to migrate cards: ${error.message}`);
-    }
-
-    console.log(`Successfully migrated ${allCards.length} cards to Supabase`);
-    setMigrationComplete();
-  } catch (error) {
-    console.error('Migration failed:', error);
-    throw error;
-  }
-}
 
