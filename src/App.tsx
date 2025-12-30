@@ -1,35 +1,76 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useMemo } from 'react';
+import { useCards } from './hooks/useCards';
+import { useFilters } from './hooks/useFilters';
+import { FilterBar } from './components/FilterBar';
+import { CardGrid } from './components/CardGrid';
+import { Pagination } from './components/Pagination';
+import { CardDetail } from './components/CardDetail';
+import type { Card } from './types/card';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { cards, allTags } = useCards();
+  const { filters, filteredAndSortedCards, updateFilters, resetFilters } = useFilters(cards);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+
+  // Calculate pagination
+  const paginatedCards = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredAndSortedCards.slice(startIndex, endIndex);
+  }, [filteredAndSortedCards, currentPage, itemsPerPage]);
+
+  // Reset to page 1 when filters change
+  const handleFiltersChange = (updates: Parameters<typeof updateFilters>[0]) => {
+    updateFilters(updates);
+    setCurrentPage(1);
+  };
+
+  const handleReset = () => {
+    resetFilters();
+    setCurrentPage(1);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app">
+      <header className="app-header">
+        <h1>Chuck's Programming Toolbox</h1>
+        <p className="app-subtitle">A collection of algorithms, patterns, and techniques for LeetCode-style problems</p>
+      </header>
+
+      <main className="app-main">
+        <FilterBar
+          filters={filters}
+          allTags={allTags}
+          onFiltersChange={handleFiltersChange}
+          onReset={handleReset}
+        />
+
+        <CardGrid cards={paginatedCards} onCardClick={setSelectedCard} />
+
+        <Pagination
+          totalItems={filteredAndSortedCards.length}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(newItemsPerPage) => {
+            setItemsPerPage(newItemsPerPage);
+            setCurrentPage(1);
+          }}
+        />
+      </main>
+
+      {selectedCard && (
+        <CardDetail
+          card={selectedCard}
+          onClose={() => setSelectedCard(null)}
+        />
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
