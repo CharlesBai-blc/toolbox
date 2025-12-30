@@ -237,17 +237,19 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
 
           {formData.classification === 'data-structures' ? (
             <div className="card-form-section">
-              <label className="card-form-label">
-                Common Methods
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <label className="card-form-label" style={{ marginBottom: 0 }}>
+                  Common Methods
+                </label>
                 <button
                   type="button"
                   onClick={addMethod}
                   className="card-form-add-method"
-                  style={{ marginLeft: '10px', padding: '4px 12px', fontSize: '0.9em', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  style={{ padding: '4px 12px', fontSize: '0.9em', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   + Add Method
                 </button>
-              </label>
+              </div>
               {formData.methods.length === 0 ? (
                 <p style={{ color: '#6b7280', fontSize: '0.9em', marginTop: '8px' }}>
                   Click "+ Add Method" to add common methods (e.g., get, put, set) with their time complexities.
