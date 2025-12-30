@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Card, CardClassification, CardDifficulty } from '../types/card';
+import type { Card, CardClassification, CardDifficulty, Method } from '../types/card';
 import { useAuth } from '../hooks/useAuth';
 import { createCard, updateCard } from '../services/cardService';
 import { AuthModal } from './AuthModal';
@@ -29,6 +29,7 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
     explanation: card?.explanation || '',
     timeComplexity: card?.timeComplexity || '',
     spaceComplexity: card?.spaceComplexity || '',
+    methods: card?.methods || [] as Method[],
     tags: card?.tags.join(', ') || '',
     useCases: card?.useCases?.join('\n') || '',
     relatedProblems: card?.relatedProblems?.join('\n') || '',
@@ -68,8 +69,9 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
         difficulty: formData.difficulty || undefined,
         code: formData.code.trim(),
         explanation: formData.explanation.trim(),
-        timeComplexity: formData.timeComplexity.trim() || undefined,
+        timeComplexity: formData.classification === 'data-structures' ? undefined : (formData.timeComplexity.trim() || undefined),
         spaceComplexity: formData.spaceComplexity.trim() || undefined,
+        methods: formData.classification === 'data-structures' && formData.methods.length > 0 ? formData.methods : undefined,
         tags,
         useCases: useCases.length > 0 ? useCases : undefined,
         relatedProblems: relatedProblems.length > 0 ? relatedProblems : undefined,
@@ -92,6 +94,40 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
 
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleClassificationChange = (classification: CardClassification) => {
+    setFormData(prev => {
+      const newData = { ...prev, classification };
+      // Clear methods if switching away from data-structures
+      if (classification !== 'data-structures') {
+        newData.methods = [];
+      }
+      return newData;
+    });
+  };
+
+  const addMethod = () => {
+    setFormData(prev => ({
+      ...prev,
+      methods: [...prev.methods, { name: '', timeComplexity: '' }]
+    }));
+  };
+
+  const updateMethod = (index: number, field: 'name' | 'timeComplexity', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      methods: prev.methods.map((method, i) => 
+        i === index ? { ...method, [field]: value } : method
+      )
+    }));
+  };
+
+  const removeMethod = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      methods: prev.methods.filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -142,7 +178,7 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
               </label>
               <select
                 value={formData.classification}
-                onChange={(e) => handleChange('classification', e.target.value)}
+                onChange={(e) => handleClassificationChange(e.target.value as CardClassification)}
                 required
                 className="card-form-select"
               >
@@ -199,29 +235,91 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
             />
           </div>
 
-          <div className="card-form-row">
+          {formData.classification === 'data-structures' ? (
             <div className="card-form-section">
-              <label className="card-form-label">Time Complexity</label>
-              <input
-                type="text"
-                value={formData.timeComplexity}
-                onChange={(e) => handleChange('timeComplexity', e.target.value)}
-                className="card-form-input"
-                placeholder="e.g., O(n log n)"
-              />
+              <label className="card-form-label">
+                Common Methods
+                <button
+                  type="button"
+                  onClick={addMethod}
+                  className="card-form-add-method"
+                  style={{ marginLeft: '10px', padding: '4px 12px', fontSize: '0.9em', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  + Add Method
+                </button>
+              </label>
+              {formData.methods.length === 0 ? (
+                <p style={{ color: '#6b7280', fontSize: '0.9em', marginTop: '8px' }}>
+                  Click "+ Add Method" to add common methods (e.g., get, put, set) with their time complexities.
+                </p>
+              ) : (
+                <div className="card-form-methods-list" style={{ marginTop: '8px' }}>
+                  {formData.methods.map((method, index) => (
+                    <div key={index} className="card-form-method-row" style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        value={method.name}
+                        onChange={(e) => updateMethod(index, 'name', e.target.value)}
+                        className="card-form-input"
+                        placeholder="Method name (e.g., get)"
+                        style={{ flex: '1' }}
+                      />
+                      <input
+                        type="text"
+                        value={method.timeComplexity}
+                        onChange={(e) => updateMethod(index, 'timeComplexity', e.target.value)}
+                        className="card-form-input"
+                        placeholder="Time complexity (e.g., O(1))"
+                        style={{ flex: '1' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeMethod(index)}
+                        className="card-form-button-remove"
+                        style={{ padding: '8px 12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="card-form-section" style={{ marginTop: '16px' }}>
+                <label className="card-form-label">Space Complexity</label>
+                <input
+                  type="text"
+                  value={formData.spaceComplexity}
+                  onChange={(e) => handleChange('spaceComplexity', e.target.value)}
+                  className="card-form-input"
+                  placeholder="e.g., O(n)"
+                />
+              </div>
             </div>
+          ) : (
+            <div className="card-form-row">
+              <div className="card-form-section">
+                <label className="card-form-label">Time Complexity</label>
+                <input
+                  type="text"
+                  value={formData.timeComplexity}
+                  onChange={(e) => handleChange('timeComplexity', e.target.value)}
+                  className="card-form-input"
+                  placeholder="e.g., O(n log n)"
+                />
+              </div>
 
-            <div className="card-form-section">
-              <label className="card-form-label">Space Complexity</label>
-              <input
-                type="text"
-                value={formData.spaceComplexity}
-                onChange={(e) => handleChange('spaceComplexity', e.target.value)}
-                className="card-form-input"
-                placeholder="e.g., O(1)"
-              />
+              <div className="card-form-section">
+                <label className="card-form-label">Space Complexity</label>
+                <input
+                  type="text"
+                  value={formData.spaceComplexity}
+                  onChange={(e) => handleChange('spaceComplexity', e.target.value)}
+                  className="card-form-input"
+                  placeholder="e.g., O(1)"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="card-form-section">
             <label className="card-form-label">Tags</label>

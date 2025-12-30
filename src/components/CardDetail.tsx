@@ -94,19 +94,37 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
             <div className="card-detail-code">
               <pre><code>{card.code}</code></pre>
             </div>
-            {(card.timeComplexity || card.spaceComplexity) && (
+            {card.classification === 'data-structures' && card.methods && card.methods.length > 0 ? (
               <div className="card-detail-complexity">
-                {card.timeComplexity && (
-                  <div className="complexity-item">
-                    <strong>Time Complexity:</strong> {card.timeComplexity}
-                  </div>
-                )}
+                <h3 style={{ marginBottom: '12px', fontSize: '1.1em' }}>Common Methods</h3>
+                <div className="card-detail-methods">
+                  {card.methods.map((method, idx) => (
+                    <div key={idx} className="complexity-item" style={{ marginBottom: '8px' }}>
+                      <strong>{method.name}:</strong> {method.timeComplexity}
+                    </div>
+                  ))}
+                </div>
                 {card.spaceComplexity && (
-                  <div className="complexity-item">
+                  <div className="complexity-item" style={{ marginTop: '12px' }}>
                     <strong>Space Complexity:</strong> {card.spaceComplexity}
                   </div>
                 )}
               </div>
+            ) : (
+              (card.timeComplexity || card.spaceComplexity) && (
+                <div className="card-detail-complexity">
+                  {card.timeComplexity && (
+                    <div className="complexity-item">
+                      <strong>Time Complexity:</strong> {card.timeComplexity}
+                    </div>
+                  )}
+                  {card.spaceComplexity && (
+                    <div className="complexity-item">
+                      <strong>Space Complexity:</strong> {card.spaceComplexity}
+                    </div>
+                  )}
+                </div>
+              )
             )}
           </div>
         );
