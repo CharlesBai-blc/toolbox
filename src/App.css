@@ -30,10 +30,20 @@
   gap: 1rem;
 }
 
-.app-logo {
-  height: 3rem;
-  width: auto;
-  object-fit: contain;
+.app-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 8rem;
+  font-weight: 400;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-family: 'Orbitron', 'Roboto', sans-serif;
+  color: #6BB6FF;
+  text-shadow: 
+    0 0 20px rgba(107, 182, 255, 0.4),
+    0 0 40px rgba(107, 182, 255, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+  max-width: 50%;
+  width: fit-content;
 }
 
 .app-header h1 {
@@ -187,8 +197,10 @@
     gap: 0.75rem;
   }
 
-  .app-logo {
-    height: 2.5rem;
+  .app-title {
+    font-size: 4rem;
+    letter-spacing: 0.2em;
+    max-width: 100%;
   }
 
   .app-header h1 {

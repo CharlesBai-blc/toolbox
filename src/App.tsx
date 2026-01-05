@@ -49,9 +49,8 @@ function App() {
       <header className="app-header">
         <div className="app-header-content">
           <div className="app-header-title-section">
-            <img src="/cblogo.png" alt="Logo" className="app-logo" />
             <div>
-              <h1>Chuck's Programming Toolbox</h1>
+              <h1 className="app-title">TOOLBOX</h1>
               <p className="app-subtitle">A collection of algorithms, patterns, and techniques for LeetCode-style problems</p>
             </div>
           </div>
