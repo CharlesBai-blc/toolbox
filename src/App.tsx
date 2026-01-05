@@ -48,9 +48,12 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-header-content">
-          <div>
-            <h1>Chuck's Programming Toolbox</h1>
-            <p className="app-subtitle">A collection of algorithms, patterns, and techniques for LeetCode-style problems</p>
+          <div className="app-header-title-section">
+            <img src="/cblogo.png" alt="Logo" className="app-logo" />
+            <div>
+              <h1>Chuck's Programming Toolbox</h1>
+              <p className="app-subtitle">A collection of algorithms, patterns, and techniques for LeetCode-style problems</p>
+            </div>
           </div>
           <div className="app-header-actions">
             {isAuthenticated ? (
