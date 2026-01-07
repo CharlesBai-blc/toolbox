@@ -1,5 +1,5 @@
 export type CardClassification = 'sorts' | 'searches' | 'algorithms' | 'heuristics' | 'patterns' | 'data-structures';
-export type CardLanguage = 'python' | 'javascript' | 'c' | 'cpp' | 'java' | 'go' | 'rust';
+export type CardLanguage = 'python' | 'javascript' | 'c' | 'cpp' | 'java' | 'go' | 'rust' | 'csharp' | 'typescript' | 'ruby' | 'php' | 'erlang' | 'kotlin';
 export type CardDifficulty = 'easy' | 'medium' | 'hard';
 
 export interface Method {

@@ -7,6 +7,21 @@ interface CodeEditorProps {
   language: string;
 }
 
+// Map our language names to Monaco Editor language IDs
+const getMonacoLanguage = (language: string): string => {
+  const languageMap: Record<string, string> = {
+    'c': 'cpp',
+    'cpp': 'cpp',
+    'csharp': 'csharp',
+    'typescript': 'typescript',
+    'ruby': 'ruby',
+    'php': 'php',
+    'erlang': 'erlang',
+    'kotlin': 'kotlin',
+  };
+  return languageMap[language] || language;
+};
+
 export const CodeEditor = ({ initialCode, language }: CodeEditorProps) => {
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState("");
@@ -62,7 +77,7 @@ export const CodeEditor = ({ initialCode, language }: CodeEditorProps) => {
       <div className="code-editor-wrapper">
         <Editor 
           height="100%" 
-          defaultLanguage={language === 'c' || language === 'cpp' ? 'cpp' : language} 
+          defaultLanguage={getMonacoLanguage(language)} 
           value={code} 
           theme="vs-dark"
           onChange={(val) => setCode(val || "")}

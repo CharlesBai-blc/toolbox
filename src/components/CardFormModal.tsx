@@ -14,7 +14,7 @@ interface CardFormModalProps {
 
 const classifications: CardClassification[] = ['sorts', 'searches', 'algorithms', 'heuristics', 'patterns', 'data-structures'];
 const difficulties: CardDifficulty[] = ['easy', 'medium', 'hard'];
-const languages: CardLanguage[] = ['python', 'javascript', 'java', 'cpp', 'c', 'go', 'rust'];
+const languages: CardLanguage[] = ['python', 'javascript', 'java', 'cpp', 'c', 'go', 'rust', 'csharp', 'typescript', 'ruby', 'php', 'erlang', 'kotlin'];
 
 export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) {
   const { isAuthenticated } = useAuth();
@@ -234,7 +234,11 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
               >
                 {languages.map(lang => (
                   <option key={lang} value={lang}>
-                    {lang === 'cpp' ? 'C++' : lang === 'c' ? 'C' : lang.charAt(0).toUpperCase() + lang.slice(1)}
+                    {lang === 'cpp' ? 'C++' : 
+                     lang === 'c' ? 'C' : 
+                     lang === 'csharp' ? 'C#' :
+                     lang === 'typescript' ? 'TypeScript' :
+                     lang.charAt(0).toUpperCase() + lang.slice(1)}
                   </option>
                 ))}
               </select>

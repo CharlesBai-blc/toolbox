@@ -53,6 +53,44 @@ func main() {
     
 }`;
 
+    case 'csharp':
+      return `using System;
+
+class Program {
+    static void Main(string[] args) {
+        // Your code here
+        
+    }
+}`;
+
+    case 'typescript':
+      return `// Your code here
+`;
+
+    case 'ruby':
+      return `# Your code here
+`;
+
+    case 'php':
+      return `<?php
+// Your code here
+
+?>`;
+
+    case 'erlang':
+      return `-module(main).
+-export([main/0]).
+
+main() ->
+    % Your code here
+    ok.`;
+
+    case 'kotlin':
+      return `fun main() {
+    // Your code here
+    
+}`;
+
     default:
       return '';
   }
@@ -68,9 +106,9 @@ export function isBoilerplateOnly(code: string, language: CardLanguage): boolean
     return true;
   }
   
-  // For languages with minimal boilerplate (python, javascript), 
+  // For languages with minimal boilerplate (python, javascript, typescript, ruby), 
   // consider it boilerplate if it's just comments or whitespace
-  if (language === 'python' || language === 'javascript') {
+  if (language === 'python' || language === 'javascript' || language === 'typescript' || language === 'ruby') {
     const withoutComments = normalizedCode
       .split('\n')
       .map(line => line.trim())
