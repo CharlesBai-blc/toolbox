@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+
 import type { Card, CardClassification, CardDifficulty } from '../types/card';
 
 export type SortOption = 'alphabetical' | 'difficulty' | 'date' | 'classification';
@@ -11,16 +12,28 @@ export interface FilterState {
   sortBy: SortOption;
 }
 
-const defaultFilters: FilterState = {
+const DEFAULT_FILTERS: FilterState = {
   classifications: [],
   difficulties: [],
   tags: [],
   searchQuery: '',
-  sortBy: 'alphabetical'
-};
+  sortBy: 'alphabetical',
+} as const;
 
+const DIFFICULTY_ORDER: Record<CardDifficulty | 'none', number> = {
+  easy: 1,
+  medium: 2,
+  hard: 3,
+  none: 4,
+} as const;
+
+/**
+ * Custom hook for filtering and sorting cards
+ * @param cards - Array of cards to filter and sort
+ * @returns Filter state, filtered/sorted cards, and filter update functions
+ */
 export function useFilters(cards: Card[]) {
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
   const filteredAndSortedCards = useMemo(() => {
     let filtered = [...cards];
@@ -64,15 +77,9 @@ export function useFilters(cards: Card[]) {
           return a.title.localeCompare(b.title);
         
         case 'difficulty': {
-          const difficultyOrder: Record<CardDifficulty | 'none', number> = {
-            easy: 1,
-            medium: 2,
-            hard: 3,
-            none: 4
-          };
           const aDiff = a.difficulty || 'none';
           const bDiff = b.difficulty || 'none';
-          return difficultyOrder[aDiff] - difficultyOrder[bDiff];
+          return DIFFICULTY_ORDER[aDiff] - DIFFICULTY_ORDER[bDiff];
         }
         
         case 'date': {
@@ -98,14 +105,14 @@ export function useFilters(cards: Card[]) {
   };
 
   const resetFilters = () => {
-    setFilters(defaultFilters);
+    setFilters(DEFAULT_FILTERS);
   };
 
   return {
     filters,
     filteredAndSortedCards,
     updateFilters,
-    resetFilters
+    resetFilters,
   };
 }
 

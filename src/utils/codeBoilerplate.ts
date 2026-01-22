@@ -1,5 +1,10 @@
 import type { CardLanguage } from '../types/card';
 
+/**
+ * Get boilerplate code for a given language
+ * @param language - The programming language
+ * @returns Boilerplate code string
+ */
 export function getBoilerplate(language: CardLanguage): string {
   switch (language) {
     case 'java':
@@ -96,6 +101,12 @@ main() ->
   }
 }
 
+/**
+ * Check if code is only boilerplate (empty or just boilerplate)
+ * @param code - Code string to check
+ * @param language - Programming language
+ * @returns True if code is empty or only contains boilerplate
+ */
 export function isBoilerplateOnly(code: string, language: CardLanguage): boolean {
   const boilerplate = getBoilerplate(language);
   const normalizedCode = code.trim();

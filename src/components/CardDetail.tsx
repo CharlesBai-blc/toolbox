@@ -5,7 +5,7 @@ import { CardFormModal } from './CardFormModal';
 import { AuthModal } from './AuthModal';
 import { deleteCard } from '../services/cardService';
 import { CodeEditor } from './CodeEditor';
-import './CardDetail.css';
+import { formatClassification, getDifficultyColor } from '../utils/constants';
 
 interface CardDetailProps {
   card: Card;
@@ -15,6 +15,14 @@ interface CardDetailProps {
 
 type Section = 'code' | 'explanation' | 'leetcode' | 'examples' | 'related';
 
+const SECTIONS: readonly { id: Section; label: string }[] = [
+  { id: 'code', label: 'Code Snippet' },
+  { id: 'explanation', label: 'Explanation' },
+  { id: 'leetcode', label: 'LeetCode Links' },
+  { id: 'examples', label: 'Examples' },
+  { id: 'related', label: 'Related Topics' },
+] as const;
+
 export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
   const { isAuthenticated } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('code');
@@ -22,19 +30,6 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-
-  const getDifficultyColor = (difficulty?: string) => {
-    switch (difficulty) {
-      case 'easy': return '#3eb870';
-      case 'medium': return '#c99a1c';
-      case 'hard': return '#c65a5a';
-      default: return '#6b7280';
-    }
-  };
-
-  const getClassificationLabel = (classification: string) => {
-    return classification.charAt(0).toUpperCase() + classification.slice(1);
-  };
 
   const handleEdit = () => {
     if (!isAuthenticated) {
@@ -59,9 +54,7 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
     try {
       await deleteCard(card.id);
       onClose();
-      if (onCardUpdated) {
-        onCardUpdated();
-      }
+      onCardUpdated?.();
     } catch (error) {
       console.error('Error deleting card:', error);
       alert('Failed to delete card. Please try again.');
@@ -71,65 +64,54 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
     }
   };
 
-  const handleCardUpdated = async () => {
+  const handleCardUpdated = () => {
     setShowEditModal(false);
-    if (onCardUpdated) {
-      onCardUpdated();
-    }
+    onCardUpdated?.();
   };
-
-  const sections: { id: Section; label: string }[] = [
-    { id: 'code', label: 'Code Snippet' },
-    { id: 'explanation', label: 'Explanation' },
-    { id: 'leetcode', label: 'LeetCode Links' },
-    { id: 'examples', label: 'Examples' },
-    { id: 'related', label: 'Related Topics' }
-  ];
 
   const renderContent = () => {
     switch (activeSection) {
       case 'code':
         return (
-          <div className="card-detail-content-section">
-            <h2>Code Implementation</h2>
-            <div className="card-detail-code">
+          <div className="w-full max-w-[800px] text-left">
+            <h2 className="m-0 mb-6 text-2xl font-normal text-text-primary text-left tracking-normal">
+              Code Implementation
+            </h2>
+            <div className="bg-code-bg border-none rounded p-6 overflow-x-auto mb-6 text-left">
               <div className="mt-4">
                 <CodeEditor 
                   initialCode={card.code} 
-                  // Fallback to python if language is missing
                   language={card.language || 'python'} 
-                  // Optional: Add logic to save changes if you want users to edit permanently
-                  // onChange={(newCode) => console.log(newCode)} 
                 />
               </div>
             </div>
             {card.classification === 'data-structures' && card.methods && card.methods.length > 0 ? (
-              <div className="card-detail-complexity">
-                <h3 style={{ marginBottom: '12px', fontSize: '1.1em' }}>Common Methods</h3>
-                <div className="card-detail-methods">
+              <div className="flex flex-col gap-3 text-left">
+                <h3 className="mb-3 text-[1.1em]">Common Methods</h3>
+                <div>
                   {card.methods.map((method, idx) => (
-                    <div key={idx} className="complexity-item" style={{ marginBottom: '8px' }}>
-                      <strong>{method.name}:</strong> {method.timeComplexity}
+                    <div key={idx} className="text-text-secondary text-sm font-normal mb-2">
+                      <strong className="text-text-primary mr-2 font-medium">{method.name}:</strong> {method.timeComplexity}
                     </div>
                   ))}
                 </div>
                 {card.spaceComplexity && (
-                  <div className="complexity-item" style={{ marginTop: '12px' }}>
-                    <strong>Space Complexity:</strong> {card.spaceComplexity}
+                  <div className="text-text-secondary text-sm font-normal mt-3">
+                    <strong className="text-text-primary mr-2 font-medium">Space Complexity:</strong> {card.spaceComplexity}
                   </div>
                 )}
               </div>
             ) : (
               (card.timeComplexity || card.spaceComplexity) && (
-                <div className="card-detail-complexity">
+                <div className="flex flex-col gap-3 text-left">
                   {card.timeComplexity && (
-                    <div className="complexity-item">
-                      <strong>Time Complexity:</strong> {card.timeComplexity}
+                    <div className="text-text-secondary text-sm font-normal">
+                      <strong className="text-text-primary mr-2 font-medium">Time Complexity:</strong> {card.timeComplexity}
                     </div>
                   )}
                   {card.spaceComplexity && (
-                    <div className="complexity-item">
-                      <strong>Space Complexity:</strong> {card.spaceComplexity}
+                    <div className="text-text-secondary text-sm font-normal">
+                      <strong className="text-text-primary mr-2 font-medium">Space Complexity:</strong> {card.spaceComplexity}
                     </div>
                   )}
                 </div>
@@ -140,57 +122,71 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
 
       case 'explanation':
         return (
-          <div className="card-detail-content-section">
-            <h2>Explanation</h2>
-            <div className="card-detail-explanation">
-              <p>{card.explanation}</p>
+          <div className="w-full max-w-[800px] text-left">
+            <h2 className="m-0 mb-6 text-2xl font-normal text-text-primary text-left tracking-normal">
+              Explanation
+            </h2>
+            <div className="text-text-secondary leading-[1.75] text-base text-left font-normal">
+              <p className="m-0">{card.explanation}</p>
             </div>
           </div>
         );
 
       case 'leetcode':
         return (
-          <div className="card-detail-content-section">
-            <h2>LeetCode Problems</h2>
+          <div className="w-full max-w-[800px] text-left">
+            <h2 className="m-0 mb-6 text-2xl font-normal text-text-primary text-left tracking-normal">
+              LeetCode Problems
+            </h2>
             {card.relatedProblems && card.relatedProblems.length > 0 ? (
-              <div className="card-detail-leetcode">
-                <ul>
+              <div className="text-left">
+                <ul className="list-none p-0 m-0 text-left">
                   {card.relatedProblems.map((problem, idx) => (
-                    <li key={idx}>{problem}</li>
+                    <li key={idx} className="py-2 text-text-secondary text-sm border-b border-border font-normal last:border-b-0">
+                      {problem}
+                    </li>
                   ))}
                 </ul>
               </div>
             ) : (
-              <p className="card-detail-empty">No LeetCode problems linked yet.</p>
+              <p className="text-[#6a6a6a] italic text-left">No LeetCode problems linked yet.</p>
             )}
           </div>
         );
 
       case 'examples':
         return (
-          <div className="card-detail-content-section">
-            <h2>Use Cases & Examples</h2>
+          <div className="w-full max-w-[800px] text-left">
+            <h2 className="m-0 mb-6 text-2xl font-normal text-text-primary text-left tracking-normal">
+              Use Cases & Examples
+            </h2>
             {card.useCases && card.useCases.length > 0 ? (
-              <div className="card-detail-examples">
-                <ul>
+              <div className="text-left">
+                <ul className="list-none p-0 m-0 text-left">
                   {card.useCases.map((useCase, idx) => (
-                    <li key={idx}>{useCase}</li>
+                    <li key={idx} className="py-2 text-text-secondary text-sm border-b border-border font-normal last:border-b-0">
+                      {useCase}
+                    </li>
                   ))}
                 </ul>
               </div>
             ) : (
-              <p className="card-detail-empty">No examples provided yet.</p>
+              <p className="text-[#6a6a6a] italic text-left">No examples provided yet.</p>
             )}
           </div>
         );
 
       case 'related':
         return (
-          <div className="card-detail-content-section">
-            <h2>Related Topics</h2>
-            <div className="card-detail-tags">
+          <div className="w-full max-w-[800px] text-left">
+            <h2 className="m-0 mb-6 text-2xl font-normal text-text-primary text-left tracking-normal">
+              Related Topics
+            </h2>
+            <div className="flex flex-wrap gap-2 justify-start">
               {card.tags.map(tag => (
-                <span key={tag} className="card-detail-tag">{tag}</span>
+                <span key={tag} className="px-3 py-1.5 bg-[#3c4043] border-none rounded text-xs text-text-secondary font-normal">
+                  {tag}
+                </span>
               ))}
             </div>
           </div>
@@ -202,18 +198,20 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
   };
 
   return (
-    <div className="card-detail-overlay" onClick={onClose}>
-      <div className="card-detail-container" onClick={(e) => e.stopPropagation()}>
-        <div className="card-detail-header">
-          <div className="card-detail-title-section">
-            <h1>{card.title}</h1>
-            <div className="card-detail-badges">
-              <span className="card-detail-classification">
-                {getClassificationLabel(card.classification)}
+    <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4 md:p-0" onClick={onClose}>
+      <div className="bg-surface border-none rounded-lg w-full max-w-[1400px] h-[90vh] max-h-[900px] flex flex-col shadow-modal md:rounded-lg md:h-[90vh] md:max-h-[900px]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center px-8 py-6 border-b border-border">
+          <div className="flex items-center gap-4 flex-1 flex-col md:flex-row md:items-center md:gap-4">
+            <h1 className="m-0 text-2xl md:text-2xl font-normal text-text-primary tracking-normal">
+              {card.title}
+            </h1>
+            <div className="flex gap-2 flex-wrap">
+              <span className="px-3 py-1 rounded-2xl text-xs font-medium uppercase text-text-primary tracking-[0.5px] bg-[#5b8fb8] border border-[#6b9fc8]">
+                {formatClassification(card.classification)}
               </span>
               {card.difficulty && (
                 <span
-                  className="card-detail-difficulty"
+                  className="px-3 py-1 rounded-2xl text-xs font-medium uppercase text-text-primary tracking-[0.5px]"
                   style={{ backgroundColor: getDifficultyColor(card.difficulty) }}
                 >
                   {card.difficulty}
@@ -221,17 +219,17 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
               )}
             </div>
           </div>
-          <div className="card-detail-actions">
+          <div className="flex items-center gap-3">
             {isAuthenticated && (
               <>
                 <button
-                  className="card-detail-button card-detail-edit"
+                  className="px-4 py-2 border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 bg-accent text-background hover:bg-accent-hover"
                   onClick={handleEdit}
                 >
                   Edit
                 </button>
                 <button
-                  className="card-detail-button card-detail-delete"
+                  className="px-4 py-2 border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 bg-error text-text-primary hover:bg-error-hover disabled:opacity-60 disabled:cursor-not-allowed"
                   onClick={handleDelete}
                   disabled={isDeleting}
                 >
@@ -239,16 +237,25 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
                 </button>
               </>
             )}
-            <button className="card-detail-close" onClick={onClose}>×</button>
+            <button 
+              className="bg-transparent border-none text-text-tertiary text-[2rem] w-10 h-10 rounded-full cursor-pointer flex items-center justify-center transition-all duration-200 leading-none p-0 hover:bg-[#3c4043] hover:text-text-primary" 
+              onClick={onClose}
+            >
+              ×
+            </button>
           </div>
         </div>
 
-        <div className="card-detail-body">
-          <nav className="card-detail-sidebar">
-            {sections.map(section => (
+        <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+          <nav className="w-full md:w-[200px] border-r-0 md:border-r border-border py-2 md:py-4 flex flex-row md:flex-col gap-1 md:gap-1 overflow-x-auto md:overflow-y-auto flex-shrink-0 bg-background md:border-b-0 border-b border-dark-border px-2 md:px-0">
+            {SECTIONS.map(section => (
               <button
                 key={section.id}
-                className={`card-detail-nav-item ${activeSection === section.id ? 'active' : ''}`}
+                className={`px-3 md:px-4 py-2 md:py-3 bg-transparent border-none text-text-secondary text-left cursor-pointer text-sm transition-all duration-200 border-l-0 md:border-l-3 border-b-3 md:border-b-0 border-transparent font-normal whitespace-nowrap md:whitespace-normal hover:bg-[#3c4043] hover:text-text-primary ${
+                  activeSection === section.id
+                    ? 'bg-[#3c4043] text-accent border-l-accent md:border-l-accent border-b-accent md:border-b-transparent font-medium'
+                    : ''
+                }`}
                 onClick={() => setActiveSection(section.id)}
               >
                 {section.label}
@@ -256,7 +263,7 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
             ))}
           </nav>
 
-          <div className="card-detail-content">
+          <div className="flex-1 p-8 md:p-8 overflow-y-auto flex flex-col items-start">
             {renderContent()}
           </div>
         </div>

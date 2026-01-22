@@ -1,8 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
+
 import { supabase } from '../lib/supabase';
 import { getAllCards } from '../services/cardService';
 import type { Card } from '../types/card';
 
+/**
+ * Custom hook for managing cards data with real-time updates
+ * @returns Cards data, loading state, error state, and refetch function
+ */
 export function useCards() {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +22,6 @@ export function useCards() {
         setLoading(true);
         setError(null);
 
-        // Fetch cards from Supabase
         const fetchedCards = await getAllCards();
         
         if (mounted) {
@@ -76,23 +80,26 @@ export function useCards() {
     return Array.from(tagSet).sort();
   }, [cards]);
 
+  const refetch = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const fetchedCards = await getAllCards();
+      setCards(fetchedCards);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reload cards';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     cards,
     allTags,
     loading,
     error,
-    refetch: async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const fetchedCards = await getAllCards();
-        setCards(fetchedCards);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to reload cards');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
+    refetch,
   };
 }

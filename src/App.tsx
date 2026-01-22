@@ -1,15 +1,17 @@
 import { useState, useMemo } from 'react';
+
 import { useCards } from './hooks/useCards';
 import { useFilters } from './hooks/useFilters';
 import { useAuth } from './hooks/useAuth';
+
 import { FilterBar } from './components/FilterBar';
 import { CardGrid } from './components/CardGrid';
 import { Pagination } from './components/Pagination';
 import { CardDetail } from './components/CardDetail';
 import { CardFormModal } from './components/CardFormModal';
 import { AuthModal } from './components/AuthModal';
+
 import type { Card } from './types/card';
-import './App.css';
 
 function App() {
   const { cards, allTags, loading, error, refetch } = useCards();
@@ -45,26 +47,28 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="app-header-content">
-          <div className="app-header-title-section">
-            <div>
-              <h1 className="app-title">TOOLBOX</h1>
-              <p className="app-subtitle">A collection of algorithms, patterns, and techniques for LeetCode-style problems</p>
+    <div className="min-h-screen bg-background">
+      <header className="bg-surface border-b-0 text-text-primary py-8 px-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.3)] md:px-4 md:py-8">
+        <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-4">
+            <div className="text-left w-full md:w-auto">
+              <h1 className="app-title mb-2 text-[4rem] md:text-[8rem] font-normal tracking-[0.2em] md:tracking-[0.25em] uppercase font-orbitron text-accent-blue max-w-full md:max-w-[50%] w-fit [text-shadow:0_0_20px_rgba(107,182,255,0.4),0_0_40px_rgba(107,182,255,0.2),0_2px_4px_rgba(0,0,0,0.2)]">
+                TOOLBOX
+              </h1>
+              <p className="m-0 text-sm md:text-sm text-text-tertiary font-normal">A collection of algorithms, patterns, and techniques for LeetCode-style problems</p>
             </div>
           </div>
-          <div className="app-header-actions">
+          <div className="flex items-center gap-3 w-full md:w-auto md:justify-end justify-between">
             {isAuthenticated ? (
               <>
                 <button
-                  className="app-create-button"
+                  className="px-6 py-3 bg-accent text-background border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 whitespace-nowrap hover:bg-accent-hover"
                   onClick={() => setShowCreateModal(true)}
                 >
                   + Create Card
                 </button>
                 <button
-                  className="app-auth-button"
+                  className="p-2 bg-transparent border border-border rounded-full cursor-pointer transition-all duration-200 flex items-center justify-center w-10 h-10 hover:bg-[#3c4043] hover:border-accent"
                   onClick={() => setShowAuthModal(true)}
                   title={user?.email || 'Account'}
                 >
@@ -72,24 +76,24 @@ function App() {
                     <img
                       src={user.user_metadata.avatar_url}
                       alt={user.email || 'User'}
-                      className="app-user-avatar"
+                      className="w-full h-full rounded-full object-cover"
                     />
                   ) : (
-                    <span className="app-user-icon">👤</span>
+                    <span className="text-xl leading-none">👤</span>
                   )}
                 </button>
               </>
             ) : (
               <>
                 <button
-                  className="app-create-button app-create-button-disabled"
+                  className="px-6 py-3 bg-accent text-background border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 whitespace-nowrap opacity-60 hover:opacity-80 hover:bg-accent w-full md:w-auto"
                   onClick={() => setShowAuthModal(true)}
                   title="Sign in to create cards"
                 >
                   + Create Card
                 </button>
                 <button
-                  className="app-auth-button app-auth-button-signin"
+                  className="px-6 py-3 bg-transparent border border-border rounded text-sm font-medium cursor-pointer transition-all duration-200 text-text-primary hover:bg-[#3c4043] hover:border-accent w-full md:w-auto"
                   onClick={() => setShowAuthModal(true)}
                 >
                   Sign In
@@ -100,17 +104,22 @@ function App() {
         </div>
       </header>
 
-      <main className="app-main">
+      <main className="max-w-[1400px] mx-auto p-6 md:p-6">
         {loading && (
-          <div className="app-loading">
+          <div className="text-center py-12 text-text-secondary">
             <p>Loading cards...</p>
           </div>
         )}
 
         {error && (
-          <div className="app-error">
+          <div className="text-center py-12 text-[#f28b82]">
             <p>Error: {error}</p>
-            <button onClick={() => refetch()}>Retry</button>
+            <button 
+              className="mt-4 px-4 py-2 bg-accent text-background border-none rounded cursor-pointer text-sm hover:bg-accent-hover"
+              onClick={() => refetch()}
+            >
+              Retry
+            </button>
           </div>
         )}
 

@@ -1,5 +1,4 @@
 import { useAuth } from '../hooks/useAuth';
-import './AuthModal.css';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -28,9 +27,9 @@ export function AuthModal({ onClose }: AuthModalProps) {
 
   if (loading) {
     return (
-      <div className="auth-modal-overlay" onClick={onClose}>
-        <div className="auth-modal-container" onClick={(e) => e.stopPropagation()}>
-          <div className="auth-modal-content">
+      <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-surface border-none rounded-lg w-full max-w-md flex flex-col shadow-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="p-8">
             <p>Loading...</p>
           </div>
         </div>
@@ -39,33 +38,33 @@ export function AuthModal({ onClose }: AuthModalProps) {
   }
 
   return (
-    <div className="auth-modal-overlay" onClick={onClose}>
-      <div className="auth-modal-container" onClick={(e) => e.stopPropagation()}>
-        <div className="auth-modal-header">
-          <h2>{user ? 'Account' : 'Sign In'}</h2>
-          <button className="auth-modal-close" onClick={onClose}>×</button>
+    <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-surface border-none rounded-lg w-full max-w-md flex flex-col shadow-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center px-8 py-6 border-b border-border">
+          <h2 className="m-0 text-2xl font-normal text-text-primary">{user ? 'Account' : 'Sign In'}</h2>
+          <button className="bg-transparent border-none text-text-tertiary text-[2rem] cursor-pointer leading-none p-0 w-8 h-8 flex items-center justify-center transition-colors duration-200 hover:text-text-primary" onClick={onClose}>×</button>
         </div>
 
-        <div className="auth-modal-content">
+        <div className="p-8">
           {user ? (
             <>
-              <div className="auth-user-info">
+              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
                 {user.user_metadata?.avatar_url && (
                   <img
                     src={user.user_metadata.avatar_url}
                     alt={user.email || 'User'}
-                    className="auth-user-avatar"
+                    className="w-12 h-12 rounded-full border-2 border-border"
                   />
                 )}
-                <div className="auth-user-details">
-                  <p className="auth-user-name">
+                <div className="flex-1">
+                  <p className="m-0 mb-1 text-text-primary text-base font-medium">
                     {user.user_metadata?.full_name || user.email}
                   </p>
-                  <p className="auth-user-email">{user.email}</p>
+                  <p className="m-0 text-text-tertiary text-sm">{user.email}</p>
                 </div>
               </div>
               <button
-                className="auth-button auth-button-signout"
+                className="w-full px-6 py-3 border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-3 bg-error text-text-primary hover:bg-error-hover"
                 onClick={handleSignOut}
               >
                 Sign Out
@@ -73,15 +72,15 @@ export function AuthModal({ onClose }: AuthModalProps) {
             </>
           ) : (
             <>
-              <p className="auth-modal-description">
+              <p className="text-text-secondary mb-6 text-sm leading-6">
                 Sign in with Google to create, edit, and delete cards.
               </p>
               <button
-                className="auth-button auth-button-google"
+                className="w-full px-6 py-3 border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-3 bg-white text-background hover:bg-[#f8f9fa] hover:shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
                 onClick={handleSignIn}
               >
                 <svg
-                  className="auth-google-icon"
+                  className="flex-shrink-0"
                   viewBox="0 0 24 24"
                   width="20"
                   height="20"

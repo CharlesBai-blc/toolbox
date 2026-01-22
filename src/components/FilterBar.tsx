@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { CardClassification, CardDifficulty } from '../types/card';
 import type { FilterState, SortOption } from '../hooks/useFilters';
-import './FilterBar.css';
+import { CLASSIFICATIONS, DIFFICULTIES, formatClassification } from '../utils/constants';
 
 interface FilterBarProps {
   filters: FilterState;
@@ -10,14 +10,12 @@ interface FilterBarProps {
   onReset: () => void;
 }
 
-const classifications: CardClassification[] = ['sorts', 'searches', 'algorithms', 'heuristics', 'patterns', 'data-structures'];
-const difficulties: CardDifficulty[] = ['easy', 'medium', 'hard'];
-const sortOptions: { value: SortOption; label: string }[] = [
+const SORT_OPTIONS: readonly { value: SortOption; label: string }[] = [
   { value: 'alphabetical', label: 'Alphabetical' },
   { value: 'difficulty', label: 'Difficulty' },
   { value: 'date', label: 'Date Added' },
-  { value: 'classification', label: 'Classification' }
-];
+  { value: 'classification', label: 'Classification' },
+] as const;
 
 export function FilterBar({ filters, allTags, onFiltersChange, onReset }: FilterBarProps) {
   const hasActiveFilters = useMemo(() => {
@@ -51,44 +49,54 @@ export function FilterBar({ filters, allTags, onFiltersChange, onReset }: Filter
   };
 
   return (
-    <div className="filter-bar">
-      <div className="filter-section">
-        <div className="filter-search">
+    <div className="bg-surface border-none rounded-lg p-6 shadow-[0_1px_2px_0_rgba(0,0,0,0.3),0_4px_8px_3px_rgba(0,0,0,0.15)] mb-6 md:p-6">
+      <div className="mb-3 last:mb-0">
+        <div className="w-full">
           <input
             type="text"
             placeholder="Search cards..."
             value={filters.searchQuery}
             onChange={(e) => onFiltersChange({ searchQuery: e.target.value })}
-            className="filter-search-input"
+            className="w-full px-4 py-3 border border-border rounded-full text-sm bg-background text-text-primary transition-all duration-200 font-normal focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
           />
         </div>
       </div>
 
-      <div className="filter-section">
-        <label className="filter-label">Classification</label>
-        <div className="filter-buttons">
-          {classifications.map(classification => (
+      <div className="mb-3 last:mb-0">
+        <label className="block font-medium text-text-secondary mb-3 text-xs uppercase tracking-[0.5px]">
+          Classification
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {CLASSIFICATIONS.map(classification => (
             <button
               key={classification}
               onClick={() => toggleClassification(classification)}
-              className={`filter-button ${filters.classifications.includes(classification) ? 'active' : ''}`}
+              className={`px-4 py-2 border rounded-[20px] cursor-pointer text-[0.8125rem] text-text-secondary transition-all duration-200 font-normal hover:bg-[#3c4043] hover:border-accent hover:text-text-primary hover:shadow-[0_1px_2px_0_rgba(0,0,0,0.3)] ${
+                filters.classifications.includes(classification)
+                  ? 'bg-accent text-background border-accent font-medium hover:bg-accent-hover hover:border-accent-hover'
+                  : 'border-border bg-background'
+              }`}
             >
-              {classification === 'data-structures' 
-                ? 'Data Structures' 
-                : classification.charAt(0).toUpperCase() + classification.slice(1)}
+              {formatClassification(classification)}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="filter-section">
-        <label className="filter-label">Difficulty</label>
-        <div className="filter-buttons">
-          {difficulties.map(difficulty => (
+      <div className="mb-3 last:mb-0">
+        <label className="block font-medium text-text-secondary mb-3 text-xs uppercase tracking-[0.5px]">
+          Difficulty
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {DIFFICULTIES.map(difficulty => (
             <button
               key={difficulty}
               onClick={() => toggleDifficulty(difficulty)}
-              className={`filter-button ${filters.difficulties.includes(difficulty) ? 'active' : ''}`}
+              className={`px-4 py-2 border rounded-[20px] cursor-pointer text-[0.8125rem] text-text-secondary transition-all duration-200 font-normal hover:bg-[#3c4043] hover:border-accent hover:text-text-primary hover:shadow-[0_1px_2px_0_rgba(0,0,0,0.3)] ${
+                filters.difficulties.includes(difficulty)
+                  ? 'bg-accent text-background border-accent font-medium hover:bg-accent-hover hover:border-accent-hover'
+                  : 'border-border bg-background'
+              }`}
             >
               {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
             </button>
@@ -96,14 +104,20 @@ export function FilterBar({ filters, allTags, onFiltersChange, onReset }: Filter
         </div>
       </div>
 
-      <div className="filter-section">
-        <label className="filter-label">Tags</label>
-        <div className="filter-tags">
+      <div className="mb-3 last:mb-0">
+        <label className="block font-medium text-text-secondary mb-3 text-xs uppercase tracking-[0.5px]">
+          Tags
+        </label>
+        <div className="flex flex-wrap gap-1.5">
           {allTags.map(tag => (
             <button
               key={tag}
               onClick={() => toggleTag(tag)}
-              className={`filter-tag ${filters.tags.includes(tag) ? 'active' : ''}`}
+              className={`px-3 py-1.5 border rounded-2xl cursor-pointer text-xs text-text-secondary transition-all duration-200 font-normal hover:bg-[#3c4043] hover:border-accent hover:text-text-primary ${
+                filters.tags.includes(tag)
+                  ? 'bg-accent text-background border-accent font-medium hover:bg-accent-hover hover:border-accent-hover'
+                  : 'border-border bg-background'
+              }`}
             >
               {tag}
             </button>
@@ -111,14 +125,16 @@ export function FilterBar({ filters, allTags, onFiltersChange, onReset }: Filter
         </div>
       </div>
 
-      <div className="filter-section filter-actions">
-        <label className="filter-label">Sort By</label>
+      <div className="mb-3 last:mb-0 flex justify-between items-center flex-wrap gap-3 md:flex-row md:flex-wrap">
+        <label className="block font-medium text-text-secondary mb-3 text-xs uppercase tracking-[0.5px] md:mb-0">
+          Sort By
+        </label>
         <select
           value={filters.sortBy}
           onChange={(e) => onFiltersChange({ sortBy: e.target.value as SortOption })}
-          className="filter-select"
+          className="px-2 py-1.5 border border-dark-border bg-dark-surface rounded text-xs cursor-pointer text-[#b5b5b5] min-w-[120px] w-full md:w-auto focus:outline-none focus:border-[#5a5a5a] focus:shadow-[0_0_0_2px_rgba(90,90,90,0.2)]"
         >
-          {sortOptions.map(option => (
+          {SORT_OPTIONS.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -126,7 +142,10 @@ export function FilterBar({ filters, allTags, onFiltersChange, onReset }: Filter
         </select>
 
         {hasActiveFilters && (
-          <button onClick={onReset} className="filter-reset">
+          <button 
+            onClick={onReset} 
+            className="px-3 py-1.5 border border-[#4a4a4a] bg-dark-surface rounded cursor-pointer text-xs text-[#b5b5b5] transition-all duration-200 hover:bg-[#3a3a3a] hover:border-[#5a5a5a] hover:text-[#e5e5e5] w-full md:w-auto"
+          >
             Reset Filters
           </button>
         )}

@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabase';
 import type { Card } from '../types/card';
 
-// Database schema type (snake_case)
+/**
+ * Database schema type (snake_case)
+ */
 interface DatabaseCard {
   id: string;
   title: string;
@@ -11,7 +13,7 @@ interface DatabaseCard {
   explanation: string;
   time_complexity: string | null;
   space_complexity: string | null;
-  methods: { name: string; time_complexity: string }[] | null; // For data structures
+  methods: { name: string; time_complexity: string }[] | null;
   tags: string[];
   use_cases: string[] | null;
   related_problems: string[] | null;
@@ -21,27 +23,33 @@ interface DatabaseCard {
   updated_at: string;
 }
 
-// Transform database card to Card interface
+/**
+ * Transform database card to Card interface
+ */
 function dbToCard(dbCard: DatabaseCard): Card {
   return {
     id: dbCard.id,
     title: dbCard.title,
     classification: dbCard.classification as Card['classification'],
-    difficulty: dbCard.difficulty as Card['difficulty'] || undefined,
+    difficulty: (dbCard.difficulty as Card['difficulty']) || undefined,
     code: dbCard.code,
     explanation: dbCard.explanation,
     timeComplexity: dbCard.time_complexity || undefined,
     spaceComplexity: dbCard.space_complexity || undefined,
-    methods: dbCard.methods ? dbCard.methods.map(m => ({ name: m.name, timeComplexity: m.time_complexity })) : undefined,
+    methods: dbCard.methods
+      ? dbCard.methods.map(m => ({ name: m.name, timeComplexity: m.time_complexity }))
+      : undefined,
     tags: dbCard.tags,
     useCases: dbCard.use_cases || undefined,
     relatedProblems: dbCard.related_problems || undefined,
     dateAdded: dbCard.date_added || undefined,
-    language: dbCard.language as Card['language'] || undefined,
+    language: (dbCard.language as Card['language']) || undefined,
   };
 }
 
-// Transform Card interface to database format
+/**
+ * Transform Card interface to database format
+ */
 function cardToDb(card: Omit<Card, 'id'> & { id?: string }): Omit<DatabaseCard, 'id' | 'created_at' | 'updated_at'> {
   return {
     title: card.title,
@@ -51,7 +59,9 @@ function cardToDb(card: Omit<Card, 'id'> & { id?: string }): Omit<DatabaseCard, 
     explanation: card.explanation,
     time_complexity: card.timeComplexity || null,
     space_complexity: card.spaceComplexity || null,
-    methods: card.methods ? card.methods.map(m => ({ name: m.name, time_complexity: m.timeComplexity })) : null,
+    methods: card.methods
+      ? card.methods.map(m => ({ name: m.name, time_complexity: m.timeComplexity }))
+      : null,
     tags: card.tags,
     use_cases: card.useCases || null,
     related_problems: card.relatedProblems || null,
@@ -60,7 +70,11 @@ function cardToDb(card: Omit<Card, 'id'> & { id?: string }): Omit<DatabaseCard, 
   };
 }
 
-// Fetch all cards from Supabase
+/**
+ * Fetch all cards from Supabase
+ * @returns Promise resolving to array of cards
+ * @throws Error if fetch fails
+ */
 export async function getAllCards(): Promise<Card[]> {
   const { data, error } = await supabase
     .from('cards')
@@ -75,7 +89,12 @@ export async function getAllCards(): Promise<Card[]> {
   return (data || []).map(dbToCard);
 }
 
-// Create a new card
+/**
+ * Create a new card
+ * @param card - Card data (without id and dateAdded)
+ * @returns Promise resolving to created card
+ * @throws Error if creation fails
+ */
 export async function createCard(card: Omit<Card, 'id' | 'dateAdded'>): Promise<Card> {
   const dbCard = cardToDb(card);
   
@@ -93,7 +112,13 @@ export async function createCard(card: Omit<Card, 'id' | 'dateAdded'>): Promise<
   return dbToCard(data);
 }
 
-// Update an existing card
+/**
+ * Update an existing card
+ * @param id - Card ID
+ * @param updates - Partial card data to update
+ * @returns Promise resolving to updated card
+ * @throws Error if update fails
+ */
 export async function updateCard(id: string, updates: Partial<Omit<Card, 'id'>>): Promise<Card> {
   const updateData: Partial<DatabaseCard> = {};
   
@@ -104,7 +129,11 @@ export async function updateCard(id: string, updates: Partial<Omit<Card, 'id'>>)
   if (updates.explanation !== undefined) updateData.explanation = updates.explanation;
   if (updates.timeComplexity !== undefined) updateData.time_complexity = updates.timeComplexity || null;
   if (updates.spaceComplexity !== undefined) updateData.space_complexity = updates.spaceComplexity || null;
-  if (updates.methods !== undefined) updateData.methods = updates.methods ? updates.methods.map(m => ({ name: m.name, time_complexity: m.timeComplexity })) : null;
+  if (updates.methods !== undefined) {
+    updateData.methods = updates.methods
+      ? updates.methods.map(m => ({ name: m.name, time_complexity: m.timeComplexity }))
+      : null;
+  }
   if (updates.tags !== undefined) updateData.tags = updates.tags;
   if (updates.useCases !== undefined) updateData.use_cases = updates.useCases || null;
   if (updates.relatedProblems !== undefined) updateData.related_problems = updates.relatedProblems || null;
@@ -126,7 +155,11 @@ export async function updateCard(id: string, updates: Partial<Omit<Card, 'id'>>)
   return dbToCard(data);
 }
 
-// Delete a card
+/**
+ * Delete a card
+ * @param id - Card ID to delete
+ * @throws Error if deletion fails
+ */
 export async function deleteCard(id: string): Promise<void> {
   const { error } = await supabase
     .from('cards')

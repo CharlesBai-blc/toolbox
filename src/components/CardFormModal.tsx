@@ -4,17 +4,13 @@ import { useAuth } from '../hooks/useAuth';
 import { createCard, updateCard } from '../services/cardService';
 import { AuthModal } from './AuthModal';
 import { getBoilerplate, isBoilerplateOnly } from '../utils/codeBoilerplate';
-import './CardFormModal.css';
+import { CLASSIFICATIONS, DIFFICULTIES, LANGUAGES, formatLanguage } from '../utils/constants';
 
 interface CardFormModalProps {
-  card?: Card; // If provided, we're editing; otherwise, creating
+  card?: Card;
   onClose: () => void;
   onSuccess: () => void;
 }
-
-const classifications: CardClassification[] = ['sorts', 'searches', 'algorithms', 'heuristics', 'patterns', 'data-structures'];
-const difficulties: CardDifficulty[] = ['easy', 'medium', 'hard'];
-const languages: CardLanguage[] = ['python', 'javascript', 'java', 'cpp', 'c', 'go', 'rust', 'csharp', 'typescript', 'ruby', 'php', 'erlang', 'kotlin'];
 
 export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) {
   const { isAuthenticated } = useAuth();
@@ -147,20 +143,20 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
   };
 
   return (
-    <div className="card-form-overlay" onClick={onClose}>
-      <div className="card-form-container" onClick={(e) => e.stopPropagation()}>
-        <div className="card-form-header">
-          <h2>{isEditing ? 'Edit Card' : 'Create New Card'}</h2>
-          <button className="card-form-close" onClick={onClose}>×</button>
+    <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-surface border-none rounded-lg w-full max-w-[900px] max-h-[90vh] flex flex-col shadow-modal md:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center px-8 py-6 border-b border-border">
+          <h2 className="m-0 text-2xl font-normal text-text-primary">{isEditing ? 'Edit Card' : 'Create New Card'}</h2>
+          <button className="bg-transparent border-none text-text-tertiary text-[2rem] cursor-pointer leading-none p-0 w-8 h-8 flex items-center justify-center transition-colors duration-200 hover:text-text-primary" onClick={onClose}>×</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="card-form">
+        <form onSubmit={handleSubmit} className="p-8 overflow-y-auto flex-1 md:p-8">
           {!isAuthenticated && (
-            <div className="card-form-auth-prompt">
-              <p>You must be signed in to {isEditing ? 'edit' : 'create'} cards.</p>
+            <div className="bg-[#1e3a5f] border border-[#5b8fb8] text-text-secondary p-4 rounded mb-6 text-center">
+              <p className="m-0 mb-3 text-sm">You must be signed in to {isEditing ? 'edit' : 'create'} cards.</p>
               <button
                 type="button"
-                className="card-form-auth-button"
+                className="px-4 py-2 bg-accent text-background border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-accent-hover"
                 onClick={() => setShowAuthModal(true)}
               >
                 Sign In with Google
@@ -169,36 +165,36 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
           )}
 
           {error && (
-            <div className="card-form-error">
+            <div className="bg-[#5c2b29] text-[#f28b82] px-4 py-3 rounded mb-6 text-sm">
               {error}
             </div>
           )}
 
-          <div className="card-form-section">
-            <label className="card-form-label">
-              Title <span className="required">*</span>
+          <div className="mb-6">
+            <label className="block font-medium text-text-secondary mb-2 text-sm">
+              Title <span className="text-error">*</span>
             </label>
             <input
               type="text"
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
               required
-              className="card-form-input"
+              className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
             />
           </div>
 
-          <div className="card-form-row">
-            <div className="card-form-section">
-              <label className="card-form-label">
-                Classification <span className="required">*</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="mb-6 md:mb-0">
+              <label className="block font-medium text-text-secondary mb-2 text-sm">
+                Classification <span className="text-error">*</span>
               </label>
               <select
                 value={formData.classification}
                 onChange={(e) => handleClassificationChange(e.target.value as CardClassification)}
                 required
-                className="card-form-select"
+                className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 cursor-pointer focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
               >
-                {classifications.map(cls => (
+                {CLASSIFICATIONS.map(cls => (
                   <option key={cls} value={cls}>
                     {cls === 'data-structures' ? 'Data Structures' : cls.charAt(0).toUpperCase() + cls.slice(1)}
                   </option>
@@ -206,15 +202,15 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
               </select>
             </div>
 
-            <div className="card-form-section">
-              <label className="card-form-label">Difficulty</label>
+            <div className="mb-6 md:mb-0">
+              <label className="block font-medium text-text-secondary mb-2 text-sm">Difficulty</label>
               <select
                 value={formData.difficulty}
                 onChange={(e) => handleChange('difficulty', e.target.value)}
-                className="card-form-select"
+                className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 cursor-pointer focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
               >
                 <option value="">None</option>
-                {difficulties.map(diff => (
+                {DIFFICULTIES.map(diff => (
                   <option key={diff} value={diff}>
                     {diff.charAt(0).toUpperCase() + diff.slice(1)}
                   </option>
@@ -222,101 +218,93 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
               </select>
             </div>
 
-            <div className="card-form-section">
-              <label className="card-form-label">
-                Language <span className="required">*</span>
+            <div className="mb-6 md:mb-0">
+              <label className="block font-medium text-text-secondary mb-2 text-sm">
+                Language <span className="text-error">*</span>
               </label>
               <select
                 value={formData.language}
                 onChange={(e) => handleLanguageChange(e.target.value as CardLanguage)}
                 required
-                className="card-form-select"
+                className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 cursor-pointer focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
               >
-                {languages.map(lang => (
+                {LANGUAGES.map(lang => (
                   <option key={lang} value={lang}>
-                    {lang === 'cpp' ? 'C++' : 
-                     lang === 'c' ? 'C' : 
-                     lang === 'csharp' ? 'C#' :
-                     lang === 'typescript' ? 'TypeScript' :
-                     lang.charAt(0).toUpperCase() + lang.slice(1)}
+                    {formatLanguage(lang)}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          <div className="card-form-section">
-            <label className="card-form-label">
-              Code <span className="required">*</span>
+          <div className="mb-6">
+            <label className="block font-medium text-text-secondary mb-2 text-sm">
+              Code <span className="text-error">*</span>
             </label>
             <textarea
               value={formData.code}
               onChange={(e) => handleChange('code', e.target.value)}
               required
               rows={10}
-              className="card-form-textarea"
+              className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 resize-y min-h-[100px] focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
               placeholder="Enter your code here..."
             />
           </div>
 
-          <div className="card-form-section">
-            <label className="card-form-label">
-              Explanation <span className="required">*</span>
+          <div className="mb-6">
+            <label className="block font-medium text-text-secondary mb-2 text-sm">
+              Explanation <span className="text-error">*</span>
             </label>
             <textarea
               value={formData.explanation}
               onChange={(e) => handleChange('explanation', e.target.value)}
               required
               rows={5}
-              className="card-form-textarea"
+              className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 resize-y min-h-[100px] focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
               placeholder="Explain the algorithm, pattern, or concept..."
             />
           </div>
 
           {formData.classification === 'data-structures' ? (
-            <div className="card-form-section">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <label className="card-form-label" style={{ marginBottom: 0 }}>
+            <div className="mb-6">
+              <div className="flex items-center gap-2.5 mb-2">
+                <label className="block font-medium text-text-secondary mb-0 text-sm">
                   Common Methods
                 </label>
                 <button
                   type="button"
                   onClick={addMethod}
-                  className="card-form-add-method"
-                  style={{ padding: '4px 12px', fontSize: '0.9em', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  className="px-3 py-1 text-[0.9em] bg-[#3b82f6] text-white border-none rounded cursor-pointer"
                 >
                   + Add Method
                 </button>
               </div>
               {formData.methods.length === 0 ? (
-                <p style={{ color: '#6b7280', fontSize: '0.9em', marginTop: '8px' }}>
+                <p className="text-[#6b7280] text-[0.9em] mt-2">
                   Click "+ Add Method" to add common methods (e.g., get, put, set) with their time complexities.
                 </p>
               ) : (
-                <div className="card-form-methods-list" style={{ marginTop: '8px' }}>
+                <div className="mt-2">
                   {formData.methods.map((method, index) => (
-                    <div key={index} className="card-form-method-row" style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
+                    <div key={index} className="flex gap-2.5 mb-2.5 items-center">
                       <input
                         type="text"
                         value={method.name}
                         onChange={(e) => updateMethod(index, 'name', e.target.value)}
-                        className="card-form-input"
+                        className="flex-1 px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
                         placeholder="Method name (e.g., get)"
-                        style={{ flex: '1' }}
                       />
                       <input
                         type="text"
                         value={method.timeComplexity}
                         onChange={(e) => updateMethod(index, 'timeComplexity', e.target.value)}
-                        className="card-form-input"
+                        className="flex-1 px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
                         placeholder="Time complexity (e.g., O(1))"
-                        style={{ flex: '1' }}
                       />
                       <button
                         type="button"
                         onClick={() => removeMethod(index)}
-                        className="card-form-button-remove"
-                        style={{ padding: '8px 12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        className="px-3 py-2 bg-[#ef4444] text-white border-none rounded cursor-pointer"
                       >
                         Remove
                       </button>
@@ -324,88 +312,88 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
                   ))}
                 </div>
               )}
-              <div className="card-form-section" style={{ marginTop: '16px' }}>
-                <label className="card-form-label">Space Complexity</label>
+              <div className="mt-4">
+                <label className="block font-medium text-text-secondary mb-2 text-sm">Space Complexity</label>
                 <input
                   type="text"
                   value={formData.spaceComplexity}
                   onChange={(e) => handleChange('spaceComplexity', e.target.value)}
-                  className="card-form-input"
+                  className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
                   placeholder="e.g., O(n)"
                 />
               </div>
             </div>
           ) : (
-            <div className="card-form-row">
-              <div className="card-form-section">
-                <label className="card-form-label">Time Complexity</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="mb-6 md:mb-0">
+                <label className="block font-medium text-text-secondary mb-2 text-sm">Time Complexity</label>
                 <input
                   type="text"
                   value={formData.timeComplexity}
                   onChange={(e) => handleChange('timeComplexity', e.target.value)}
-                  className="card-form-input"
+                  className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
                   placeholder="e.g., O(n log n)"
                 />
               </div>
 
-              <div className="card-form-section">
-                <label className="card-form-label">Space Complexity</label>
+              <div className="mb-6 md:mb-0">
+                <label className="block font-medium text-text-secondary mb-2 text-sm">Space Complexity</label>
                 <input
                   type="text"
                   value={formData.spaceComplexity}
                   onChange={(e) => handleChange('spaceComplexity', e.target.value)}
-                  className="card-form-input"
+                  className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
                   placeholder="e.g., O(1)"
                 />
               </div>
             </div>
           )}
 
-          <div className="card-form-section">
-            <label className="card-form-label">Tags</label>
+          <div className="mb-6">
+            <label className="block font-medium text-text-secondary mb-2 text-sm">Tags</label>
             <input
               type="text"
               value={formData.tags}
               onChange={(e) => handleChange('tags', e.target.value)}
-              className="card-form-input"
+              className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
               placeholder="Comma-separated tags (e.g., array, search, divide-conquer)"
             />
           </div>
 
-          <div className="card-form-section">
-            <label className="card-form-label">Use Cases</label>
+          <div className="mb-6">
+            <label className="block font-medium text-text-secondary mb-2 text-sm">Use Cases</label>
             <textarea
               value={formData.useCases}
               onChange={(e) => handleChange('useCases', e.target.value)}
               rows={3}
-              className="card-form-textarea"
+              className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 resize-y min-h-[100px] focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
               placeholder="One use case per line..."
             />
           </div>
 
-          <div className="card-form-section">
-            <label className="card-form-label">Related Problems</label>
+          <div className="mb-6">
+            <label className="block font-medium text-text-secondary mb-2 text-sm">Related Problems</label>
             <textarea
               value={formData.relatedProblems}
               onChange={(e) => handleChange('relatedProblems', e.target.value)}
               rows={3}
-              className="card-form-textarea"
+              className="w-full px-3 py-3 border border-border rounded text-sm bg-background text-text-primary font-mono transition-all duration-200 resize-y min-h-[100px] focus:outline-none focus:border-accent focus:shadow-[0_0_0_1px_#8ab4f8] focus:bg-surface"
               placeholder="One problem per line (e.g., LeetCode 704: Binary Search)..."
             />
           </div>
 
-          <div className="card-form-actions">
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="card-form-button card-form-button-cancel"
+              className="px-6 py-3 border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 bg-[#5f6368] text-text-primary hover:bg-[#70757a] disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="card-form-button card-form-button-submit"
+              className="px-6 py-3 border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 bg-accent text-background hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading || !isAuthenticated}
             >
               {loading ? 'Saving...' : isEditing ? 'Update Card' : 'Create Card'}

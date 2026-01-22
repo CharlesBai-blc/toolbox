@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 
+import { supabase } from '../lib/supabase';
+
+/**
+ * Custom hook for managing authentication state
+ * @returns Authentication state and methods
+ */
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -31,7 +36,7 @@ export function useAuth() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}`,
+        redirectTo: window.location.origin,
       },
     });
     if (error) {
