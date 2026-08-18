@@ -9,7 +9,7 @@ import type {
 } from '../types/card';
 import { useAuth } from '../hooks/useAuth';
 import { createCard, updateCard } from '../services/cardService';
-import { getBoilerplate, isBoilerplateOnly } from '../utils/codeBoilerplate';
+import { getBoilerplate } from '../utils/codeBoilerplate';
 import {
   CLASSIFICATIONS,
   DIFFICULTIES,
@@ -34,6 +34,14 @@ interface FormSectionProps {
   description: string;
   children: React.ReactNode;
 }
+
+interface ImplementationDraft {
+  code: string;
+}
+
+type ImplementationDrafts = Partial<
+  Record<CardLanguage, ImplementationDraft>
+>;
 
 function FormSection({
   number,
@@ -69,6 +77,28 @@ const parseTags = (value: string) =>
     .map(item => item.trim())
     .filter(Boolean);
 
+function createImplementationDrafts(
+  card: Card | undefined,
+  initialLanguage: CardLanguage,
+): ImplementationDrafts {
+  if (!card || card.implementations.length === 0) {
+    return {
+      [initialLanguage]: {
+        code: getBoilerplate(initialLanguage),
+      },
+    };
+  }
+
+  return Object.fromEntries(
+    card.implementations.map(implementation => [
+      implementation.language,
+      {
+        code: implementation.code,
+      },
+    ]),
+  ) as ImplementationDrafts;
+}
+
 export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) {
   const { isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -79,14 +109,16 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
   const initialImplementation = card?.implementations[0];
   const initialLanguage: CardLanguage =
     initialImplementation?.language || 'python';
+  const [selectedLanguage, setSelectedLanguage] =
+    useState<CardLanguage>(initialLanguage);
+  const [implementationDrafts, setImplementationDrafts] =
+    useState<ImplementationDrafts>(() =>
+      createImplementationDrafts(card, initialLanguage),
+    );
   const [formData, setFormData] = useState({
     title: card?.title || '',
     classification: card?.classification || ('algorithms' as CardClassification),
     difficulty: card?.difficulty || ('' as CardDifficulty | ''),
-    language: initialLanguage,
-    code:
-      initialImplementation?.code ||
-      (isEditing ? '' : getBoilerplate(initialLanguage)),
     explanation: card?.explanation || '',
     timeComplexity: card?.timeComplexity || '',
     spaceComplexity: card?.spaceComplexity || '',
@@ -127,13 +159,33 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
         relatedProblems: parseLines(formData.relatedProblems),
       };
 
+      const implementations = LANGUAGES.flatMap(language => {
+        const draft = implementationDrafts[language];
+        if (!draft?.code.trim()) return [];
+        return [{ language, code: draft.code.trim() }];
+      });
+
+      if (implementations.length === 0) {
+        throw new Error('Add at least one code implementation before saving.');
+      }
+
       if (isEditing && card) {
-        await updateCard(card.id, cardData);
+        await updateCard(
+          card.id,
+          cardData,
+          implementations.map(implementation => ({
+            language: implementation.language,
+            code: implementation.code,
+          })),
+        );
       } else {
-        await createCard(cardData, {
-          language: formData.language,
-          code: formData.code.trim(),
-        });
+        await createCard(
+          cardData,
+          implementations.map(implementation => ({
+            language: implementation.language,
+            code: implementation.code,
+          })),
+        );
       }
 
       await onSuccess();
@@ -160,16 +212,26 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
   };
 
   const handleLanguageChange = (language: CardLanguage) => {
-    setFormData(previous => {
-      const shouldReplaceCode =
-        !previous.code.trim() || isBoilerplateOnly(previous.code, previous.language);
-
+    setImplementationDrafts(previous => {
+      if (previous[language]) return previous;
       return {
         ...previous,
-        language,
-        code: shouldReplaceCode ? getBoilerplate(language) : previous.code,
+        [language]: {
+          code: getBoilerplate(language),
+        },
       };
     });
+    setSelectedLanguage(language);
+  };
+
+  const handleCodeChange = (code: string) => {
+    setImplementationDrafts(previous => ({
+      ...previous,
+      [selectedLanguage]: {
+        ...previous[selectedLanguage],
+        code,
+      },
+    }));
   };
 
   const addMethod = () => {
@@ -198,6 +260,11 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
       methods: previous.methods.filter((_, methodIndex) => methodIndex !== index),
     }));
   };
+
+  const selectedDraft = implementationDrafts[selectedLanguage];
+  const draftedLanguages = LANGUAGES.filter(
+    language => implementationDrafts[language],
+  );
 
   return (
     <>
@@ -330,75 +397,70 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
               </div>
             </FormSection>
 
-            {!isEditing && (
-              <FormSection
-                number="02 / 04"
-                title="Implementation"
-                description="Choose one starting runtime. More languages can be added later from Code Lab."
-              >
-                <div className="overflow-hidden border border-border">
-                  <div className="flex min-h-[54px] items-center justify-between gap-4 border-b border-border bg-surface-soft px-4">
-                    <div>
-                      <span className="spec-label block">Source buffer</span>
-                      <span className="mt-1 block font-mono text-[0.625rem] text-text-tertiary">
-                        main.{formData.language}
-                      </span>
-                    </div>
-                    <label className="flex items-center gap-3">
-                      <span className="spec-label hidden sm:inline">Language</span>
-                      <select
-                        value={formData.language}
-                        onChange={(event) =>
-                          handleLanguageChange(event.target.value as CardLanguage)
-                        }
-                        required
-                        aria-label="Implementation language"
-                        className="h-9 cursor-pointer border border-border-bright bg-background px-3 font-mono text-xs text-text-primary outline-none focus:border-accent"
-                      >
-                        {LANGUAGES.map(language => (
-                          <option key={language} value={language}>
-                            {formatLanguage(language)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+            <FormSection
+              number="02 / 04"
+              title="Implementations"
+              description="Each language has its own draft. Switching languages preserves the code you entered."
+            >
+              <div className="overflow-hidden border border-border">
+                <div className="flex min-h-[54px] items-center justify-between gap-4 border-b border-border bg-surface-soft px-4">
+                  <div>
+                    <span className="spec-label block">Source buffer</span>
+                    <span className="mt-1 block font-mono text-[0.625rem] text-text-tertiary">
+                      main.{selectedLanguage}
+                    </span>
                   </div>
-                  <CodeEditor
-                    initialCode={formData.code}
-                    language={formData.language}
-                    onChange={(value) => handleChange('code', value)}
-                    showToolbar={false}
-                    showRunButton={false}
-                    showOutput={false}
-                    height="420px"
-                  />
+                  <label className="flex items-center gap-3">
+                    <span className="spec-label hidden sm:inline">Language</span>
+                    <select
+                      value={selectedLanguage}
+                      onChange={(event) =>
+                        handleLanguageChange(event.target.value as CardLanguage)
+                      }
+                      required
+                      aria-label="Implementation language"
+                      className="h-9 cursor-pointer border border-border-bright bg-background px-3 font-mono text-xs text-text-primary outline-none focus:border-accent"
+                    >
+                      {LANGUAGES.map(language => (
+                        <option key={language} value={language}>
+                          {formatLanguage(language)}
+                          {implementationDrafts[language] ? ' • drafted' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
-              </FormSection>
-            )}
 
-            {isEditing && card && (
-              <FormSection
-                number="02 / 04"
-                title="Implementations"
-                description="Language implementations are independent from the shared concept content."
-              >
-                <div className="border border-border bg-background p-5">
-                  <span className="field-label">Available in Code Lab</span>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {card.implementations.map(implementation => (
-                      <span key={implementation.id} className="metadata-chip">
-                        {formatLanguage(implementation.language)}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="mb-0 mt-4 text-xs leading-5 text-text-tertiary">
-                    Use “Edit code” or “Add language” in Code Lab to maintain these
-                    implementations. Editing this form only changes shared concept
-                    content.
-                  </p>
+                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background px-4 py-3">
+                  <span className="spec-label mr-1">Drafts</span>
+                  {draftedLanguages.map(language => (
+                    <button
+                      type="button"
+                      key={language}
+                      onClick={() => setSelectedLanguage(language)}
+                      className={`filter-chip min-h-7 px-2 ${
+                        language === selectedLanguage ? 'filter-chip-active' : ''
+                      }`}
+                    >
+                      {formatLanguage(language)}
+                    </button>
+                  ))}
                 </div>
-              </FormSection>
-            )}
+
+                <CodeEditor
+                  key={selectedLanguage}
+                  initialCode={
+                    selectedDraft?.code || getBoilerplate(selectedLanguage)
+                  }
+                  language={selectedLanguage}
+                  onChange={handleCodeChange}
+                  showToolbar={false}
+                  showRunButton={false}
+                  showOutput={false}
+                  height="420px"
+                />
+              </div>
+            </FormSection>
 
             <FormSection
               number="03 / 04"

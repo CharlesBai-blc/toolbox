@@ -33,11 +33,6 @@ interface DatabaseCard {
   card_implementations?: DatabaseImplementation[];
 }
 
-type DatabaseCardInsert = Omit<
-  DatabaseCard,
-  'id' | 'created_at' | 'updated_at' | 'card_implementations'
->;
-
 function dbToImplementation(
   implementation: DatabaseImplementation,
 ): CardImplementation {
@@ -82,24 +77,27 @@ function dbToCard(dbCard: DatabaseCard): Card {
   };
 }
 
-function cardToDb(card: CardInput): DatabaseCardInsert {
+function cardToRpcArguments(
+  card: CardInput,
+  implementations: CardImplementationInput[],
+) {
   return {
-    title: card.title,
-    classification: card.classification,
-    difficulty: card.difficulty || null,
-    explanation: card.explanation,
-    time_complexity: card.timeComplexity || null,
-    space_complexity: card.spaceComplexity || null,
-    methods: card.methods
+    p_title: card.title,
+    p_classification: card.classification,
+    p_difficulty: card.difficulty || null,
+    p_explanation: card.explanation,
+    p_time_complexity: card.timeComplexity || null,
+    p_space_complexity: card.spaceComplexity || null,
+    p_methods: card.methods
       ? card.methods.map(method => ({
           name: method.name,
           time_complexity: method.timeComplexity,
         }))
       : null,
-    tags: card.tags,
-    use_cases: card.useCases || null,
-    related_problems: card.relatedProblems || null,
-    date_added: null,
+    p_tags: card.tags,
+    p_use_cases: card.useCases || null,
+    p_related_problems: card.relatedProblems || null,
+    p_implementations: implementations,
   };
 }
 
@@ -119,94 +117,41 @@ export async function getAllCards(): Promise<Card[]> {
 
 export async function createCard(
   card: CardInput,
-  initialImplementation: CardImplementationInput,
-): Promise<Card> {
-  const { data: createdCard, error: cardError } = await supabase
-    .from('cards')
-    .insert(cardToDb(card))
-    .select('*')
-    .single();
-
-  if (cardError) {
-    console.error('Error creating card:', cardError);
-    throw new Error(`Failed to create card: ${cardError.message}`);
+  implementations: CardImplementationInput[],
+): Promise<void> {
+  if (implementations.length === 0) {
+    throw new Error('A card requires at least one implementation.');
   }
 
-  const { data: implementation, error: implementationError } = await supabase
-    .from('card_implementations')
-    .insert({
-      card_id: createdCard.id,
-      language: initialImplementation.language,
-      code: initialImplementation.code,
-    })
-    .select()
-    .single();
+  const { error } = await supabase.rpc(
+    'create_card_with_implementations',
+    cardToRpcArguments(card, implementations),
+  );
 
-  if (implementationError) {
-    await supabase.from('cards').delete().eq('id', createdCard.id);
-    console.error('Error creating initial implementation:', implementationError);
-    throw new Error(
-      `Failed to create card implementation: ${implementationError.message}`,
-    );
+  if (error) {
+    console.error('Error creating card atomically:', error);
+    throw new Error(`Failed to create card: ${error.message}`);
   }
-
-  return dbToCard({
-    ...(createdCard as DatabaseCard),
-    card_implementations: [implementation as DatabaseImplementation],
-  });
 }
 
 export async function updateCard(
   id: string,
-  updates: Partial<CardInput>,
-): Promise<Card> {
-  const updateData: Partial<DatabaseCardInsert> = {};
-
-  if (updates.title !== undefined) updateData.title = updates.title;
-  if (updates.classification !== undefined) {
-    updateData.classification = updates.classification;
-  }
-  if ('difficulty' in updates) {
-    updateData.difficulty = updates.difficulty || null;
-  }
-  if (updates.explanation !== undefined) {
-    updateData.explanation = updates.explanation;
-  }
-  if ('timeComplexity' in updates) {
-    updateData.time_complexity = updates.timeComplexity || null;
-  }
-  if ('spaceComplexity' in updates) {
-    updateData.space_complexity = updates.spaceComplexity || null;
-  }
-  if ('methods' in updates) {
-    updateData.methods = updates.methods
-      ? updates.methods.map(method => ({
-          name: method.name,
-          time_complexity: method.timeComplexity,
-        }))
-      : null;
-  }
-  if (updates.tags !== undefined) updateData.tags = updates.tags;
-  if ('useCases' in updates) {
-    updateData.use_cases = updates.useCases || null;
-  }
-  if ('relatedProblems' in updates) {
-    updateData.related_problems = updates.relatedProblems || null;
+  card: CardInput,
+  implementations: CardImplementationInput[],
+): Promise<void> {
+  if (implementations.length === 0) {
+    throw new Error('A card requires at least one implementation.');
   }
 
-  const { data, error } = await supabase
-    .from('cards')
-    .update(updateData)
-    .eq('id', id)
-    .select('*, card_implementations(*)')
-    .single();
+  const { error } = await supabase.rpc('update_card_with_implementations', {
+    p_card_id: id,
+    ...cardToRpcArguments(card, implementations),
+  });
 
   if (error) {
-    console.error('Error updating card:', error);
+    console.error('Error updating card atomically:', error);
     throw new Error(`Failed to update card: ${error.message}`);
   }
-
-  return dbToCard(data as DatabaseCard);
 }
 
 export async function deleteCard(id: string): Promise<void> {
