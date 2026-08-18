@@ -19,6 +19,13 @@ export function Card({ card, index = 0, onCardClick }: CardProps) {
 
   const visibleTags = card.tags.slice(0, 3);
   const remainingTags = Math.max(card.tags.length - visibleTags.length, 0);
+  const visibleLanguages = card.implementations
+    .slice(0, 3)
+    .map(implementation => formatLanguage(implementation.language));
+  const remainingLanguages = Math.max(
+    card.implementations.length - visibleLanguages.length,
+    0,
+  );
 
   return (
     <button
@@ -59,7 +66,8 @@ export function Card({ card, index = 0, onCardClick }: CardProps) {
               {card.difficulty || 'Unrated'}
             </span>
             <span className="font-mono text-[0.625rem] uppercase tracking-[0.08em] text-text-secondary">
-              {formatLanguage(card.language || 'python')}
+              {visibleLanguages.join(' / ') || 'No code'}
+              {remainingLanguages > 0 ? ` / +${remainingLanguages}` : ''}
             </span>
           </div>
 

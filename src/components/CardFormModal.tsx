@@ -3,6 +3,7 @@ import type {
   Card,
   CardClassification,
   CardDifficulty,
+  CardInput,
   CardLanguage,
   Method,
 } from '../types/card';
@@ -75,13 +76,17 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
   const [error, setError] = useState<string | null>(null);
   const isEditing = Boolean(card);
 
-  const initialLanguage: CardLanguage = card?.language || 'python';
+  const initialImplementation = card?.implementations[0];
+  const initialLanguage: CardLanguage =
+    initialImplementation?.language || 'python';
   const [formData, setFormData] = useState({
     title: card?.title || '',
     classification: card?.classification || ('algorithms' as CardClassification),
     difficulty: card?.difficulty || ('' as CardDifficulty | ''),
     language: initialLanguage,
-    code: card?.code || (isEditing ? '' : getBoilerplate(initialLanguage)),
+    code:
+      initialImplementation?.code ||
+      (isEditing ? '' : getBoilerplate(initialLanguage)),
     explanation: card?.explanation || '',
     timeComplexity: card?.timeComplexity || '',
     spaceComplexity: card?.spaceComplexity || '',
@@ -103,12 +108,10 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
     setError(null);
 
     try {
-      const cardData: Omit<Card, 'id' | 'dateAdded'> = {
+      const cardData: CardInput = {
         title: formData.title.trim(),
         classification: formData.classification,
         difficulty: formData.difficulty || undefined,
-        language: formData.language,
-        code: formData.code.trim(),
         explanation: formData.explanation.trim(),
         timeComplexity:
           formData.classification === 'data-structures'
@@ -127,7 +130,10 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
       if (isEditing && card) {
         await updateCard(card.id, cardData);
       } else {
-        await createCard(cardData);
+        await createCard(cardData, {
+          language: formData.language,
+          code: formData.code.trim(),
+        });
       }
 
       await onSuccess();
@@ -324,54 +330,80 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
               </div>
             </FormSection>
 
-            <FormSection
-              number="02 / 04"
-              title="Implementation"
-              description="Choose the runtime and write the canonical executable example."
-            >
-              <div className="overflow-hidden border border-border">
-                <div className="flex min-h-[54px] items-center justify-between gap-4 border-b border-border bg-surface-soft px-4">
-                  <div>
-                    <span className="spec-label block">Source buffer</span>
-                    <span className="mt-1 block font-mono text-[0.625rem] text-text-tertiary">
-                      main.{formData.language}
-                    </span>
+            {!isEditing && (
+              <FormSection
+                number="02 / 04"
+                title="Implementation"
+                description="Choose one starting runtime. More languages can be added later from Code Lab."
+              >
+                <div className="overflow-hidden border border-border">
+                  <div className="flex min-h-[54px] items-center justify-between gap-4 border-b border-border bg-surface-soft px-4">
+                    <div>
+                      <span className="spec-label block">Source buffer</span>
+                      <span className="mt-1 block font-mono text-[0.625rem] text-text-tertiary">
+                        main.{formData.language}
+                      </span>
+                    </div>
+                    <label className="flex items-center gap-3">
+                      <span className="spec-label hidden sm:inline">Language</span>
+                      <select
+                        value={formData.language}
+                        onChange={(event) =>
+                          handleLanguageChange(event.target.value as CardLanguage)
+                        }
+                        required
+                        aria-label="Implementation language"
+                        className="h-9 cursor-pointer border border-border-bright bg-background px-3 font-mono text-xs text-text-primary outline-none focus:border-accent"
+                      >
+                        {LANGUAGES.map(language => (
+                          <option key={language} value={language}>
+                            {formatLanguage(language)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
-                  <label className="flex items-center gap-3">
-                    <span className="spec-label hidden sm:inline">Language</span>
-                    <select
-                      value={formData.language}
-                      onChange={(event) =>
-                        handleLanguageChange(event.target.value as CardLanguage)
-                      }
-                      required
-                      aria-label="Implementation language"
-                      className="h-9 cursor-pointer border border-border-bright bg-background px-3 font-mono text-xs text-text-primary outline-none focus:border-accent"
-                    >
-                      {LANGUAGES.map(language => (
-                        <option key={language} value={language}>
-                          {formatLanguage(language)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <CodeEditor
+                    initialCode={formData.code}
+                    language={formData.language}
+                    onChange={(value) => handleChange('code', value)}
+                    showToolbar={false}
+                    showRunButton={false}
+                    showOutput={false}
+                    height="420px"
+                  />
                 </div>
-                <CodeEditor
-                  initialCode={formData.code}
-                  language={formData.language}
-                  onChange={(value) => handleChange('code', value)}
-                  showToolbar={false}
-                  showRunButton={false}
-                  showOutput={false}
-                  height="420px"
-                />
-              </div>
-            </FormSection>
+              </FormSection>
+            )}
+
+            {isEditing && card && (
+              <FormSection
+                number="02 / 04"
+                title="Implementations"
+                description="Language implementations are independent from the shared concept content."
+              >
+                <div className="border border-border bg-background p-5">
+                  <span className="field-label">Available in Code Lab</span>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {card.implementations.map(implementation => (
+                      <span key={implementation.id} className="metadata-chip">
+                        {formatLanguage(implementation.language)}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mb-0 mt-4 text-xs leading-5 text-text-tertiary">
+                    Use “Edit code” or “Add language” in Code Lab to maintain these
+                    implementations. Editing this form only changes shared concept
+                    content.
+                  </p>
+                </div>
+              </FormSection>
+            )}
 
             <FormSection
               number="03 / 04"
               title="Analysis"
-              description="Capture the mental model and the performance characteristics."
+              description="Capture a language-agnostic mental model shared by every implementation."
             >
               <div className="space-y-5">
                 <div>
@@ -387,7 +419,7 @@ export function CardFormModal({ card, onClose, onSuccess }: CardFormModalProps) 
                     required
                     rows={7}
                     className="field-control min-h-[170px] resize-y leading-7"
-                    placeholder="Explain the intuition, invariants, and decision process..."
+                    placeholder="Explain the intuition and invariants without tying them to one programming language..."
                   />
                 </div>
 

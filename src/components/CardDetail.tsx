@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { Card } from '../types/card';
+import type { Card, CardImplementation } from '../types/card';
 import { useAuth } from '../hooks/useAuth';
 import { deleteCard } from '../services/cardService';
 import {
+  LANGUAGES,
   formatClassification,
   formatLanguage,
   getDifficultyColor,
@@ -10,11 +11,13 @@ import {
 import { AuthModal } from './AuthModal';
 import { CardFormModal } from './CardFormModal';
 import { CodeEditor } from './CodeEditor';
+import { ImplementationFormModal } from './ImplementationFormModal';
 import {
   ArrowUpRightIcon,
   CodeIcon,
   EditIcon,
   LayersIcon,
+  PlusIcon,
   TrashIcon,
   XIcon,
 } from './ui/Icons';
@@ -51,6 +54,17 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [selectedImplementationId, setSelectedImplementationId] = useState(
+    card.implementations[0]?.id || '',
+  );
+  const [implementationEditor, setImplementationEditor] = useState<
+    CardImplementation | 'new' | null
+  >(null);
+
+  const selectedImplementation =
+    card.implementations.find(
+      implementation => implementation.id === selectedImplementationId,
+    ) || card.implementations[0];
 
   const handleEdit = () => {
     if (!isAuthenticated) {
@@ -89,6 +103,20 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
   const handleCardUpdated = async () => {
     await onCardUpdated?.();
     setShowEditModal(false);
+  };
+
+  const openImplementationEditor = (
+    implementation: CardImplementation | 'new',
+  ) => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+    setImplementationEditor(implementation);
+  };
+
+  const handleImplementationUpdated = async () => {
+    await onCardUpdated?.();
   };
 
   const renderBriefing = () => (
@@ -166,7 +194,7 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
 
   const renderCodeLab = () => (
     <div className="mx-auto w-full max-w-[1100px]">
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <span className="spec-label mb-3 block text-accent">Remote execution lab</span>
           <h2 className="m-0 font-display text-3xl font-medium uppercase tracking-[-0.035em] text-text-primary sm:text-4xl">
@@ -174,15 +202,78 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
           </h2>
         </div>
         <p className="m-0 max-w-sm text-xs leading-5 text-text-tertiary">
-          Changes made here are temporary. Reset restores the saved implementation.
+          The concept stays shared. Select a language to inspect and execute its
+          implementation.
         </p>
       </div>
-      <CodeEditor
-        key={`${card.id}-${card.language}`}
-        initialCode={card.code}
-        language={card.language || 'python'}
-        height="min(620px, 65vh)"
-      />
+
+      {selectedImplementation ? (
+        <>
+          <div className="flex flex-col gap-3 border border-b-0 border-border bg-surface-soft p-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex items-center gap-3">
+              <span className="spec-label">Implementation</span>
+              <select
+                value={selectedImplementation.id}
+                onChange={event => setSelectedImplementationId(event.target.value)}
+                className="h-10 min-w-[170px] cursor-pointer border border-border-bright bg-background px-3 font-mono text-xs text-text-primary outline-none focus:border-accent"
+              >
+                {card.implementations.map(implementation => (
+                  <option key={implementation.id} value={implementation.id}>
+                    {formatLanguage(implementation.language)}
+                  </option>
+                ))}
+              </select>
+              <span className="hidden font-mono text-[0.625rem] uppercase tracking-wider text-text-tertiary sm:inline">
+                {card.implementations.length} / {LANGUAGES.length} available
+              </span>
+            </label>
+
+            <div className="flex gap-2">
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  className="button-secondary min-h-10"
+                  onClick={() => openImplementationEditor(selectedImplementation)}
+                >
+                  <EditIcon className="h-3.5 w-3.5" />
+                  Edit code
+                </button>
+              )}
+              {card.implementations.length < LANGUAGES.length && (
+                <button
+                  type="button"
+                  className="button-secondary min-h-10"
+                  onClick={() => openImplementationEditor('new')}
+                >
+                  <PlusIcon className="h-3.5 w-3.5" />
+                  Add language
+                </button>
+              )}
+            </div>
+          </div>
+          <CodeEditor
+            key={selectedImplementation.id}
+            initialCode={selectedImplementation.code}
+            language={selectedImplementation.language}
+            height="min(620px, 65vh)"
+          />
+        </>
+      ) : (
+        <div>
+          <EmptySection>
+            No executable implementation exists yet. Add the first language to activate
+            the code lab.
+          </EmptySection>
+          <button
+            type="button"
+            className="button-primary mt-4"
+            onClick={() => openImplementationEditor('new')}
+          >
+            <PlusIcon className="h-4 w-4" />
+            Add first implementation
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -291,7 +382,12 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
                 {formatClassification(card.classification)}
               </span>
               <span className="h-3 w-px bg-border-bright" />
-              <span className="spec-label">{formatLanguage(card.language || 'python')}</span>
+              <span className="spec-label">
+                {card.implementations.length}{' '}
+                {card.implementations.length === 1
+                  ? 'implementation'
+                  : 'implementations'}
+              </span>
             </div>
             <h1
               id="card-detail-title"
@@ -396,10 +492,10 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
                 </div>
                 <div>
                   <dt className="font-mono text-[0.625rem] uppercase tracking-wider text-text-tertiary">
-                    Language
+                    Languages
                   </dt>
                   <dd className="mb-0 mt-1 font-mono text-xs text-text-secondary">
-                    {formatLanguage(card.language || 'python')}
+                    {card.implementations.length}
                   </dd>
                 </div>
                 <div>
@@ -434,6 +530,17 @@ export function CardDetail({ card, onClose, onCardUpdated }: CardDetailProps) {
           card={card}
           onClose={() => setShowEditModal(false)}
           onSuccess={handleCardUpdated}
+        />
+      )}
+
+      {implementationEditor && (
+        <ImplementationFormModal
+          card={card}
+          implementation={
+            implementationEditor === 'new' ? undefined : implementationEditor
+          }
+          onClose={() => setImplementationEditor(null)}
+          onSuccess={handleImplementationUpdated}
         />
       )}
 

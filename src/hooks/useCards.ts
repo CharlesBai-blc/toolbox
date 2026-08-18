@@ -41,7 +41,18 @@ export function useCards() {
 
     loadCards();
 
-    // Set up real-time subscription for card changes
+    const reloadCards = async () => {
+      try {
+        const fetchedCards = await getAllCards();
+        if (mounted) {
+          setCards(fetchedCards);
+        }
+      } catch (err) {
+        console.error('Error reloading cards after real-time update:', err);
+      }
+    };
+
+    // Reload concepts when either their shared content or an implementation changes.
     const channel = supabase
       .channel('cards-changes')
       .on(
@@ -51,17 +62,16 @@ export function useCards() {
           schema: 'public',
           table: 'cards',
         },
-        async () => {
-          // Reload cards when any change occurs
-          try {
-            const fetchedCards = await getAllCards();
-            if (mounted) {
-              setCards(fetchedCards);
-            }
-          } catch (err) {
-            console.error('Error reloading cards after real-time update:', err);
-          }
-        }
+        reloadCards
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'card_implementations',
+        },
+        reloadCards
       )
       .subscribe();
 

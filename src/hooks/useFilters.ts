@@ -66,13 +66,15 @@ export function useFilters(cards: Card[]) {
         const searchableText = [
           card.title,
           card.explanation,
-          card.code,
           card.classification,
           card.difficulty,
-          card.language,
           card.timeComplexity,
           card.spaceComplexity,
           ...card.tags,
+          ...card.implementations.flatMap(implementation => [
+            implementation.language,
+            implementation.code,
+          ]),
           ...(card.useCases || []),
           ...(card.relatedProblems || []),
           ...(card.methods || []).flatMap(method => [

@@ -7,12 +7,20 @@ export interface Method {
   timeComplexity: string;
 }
 
+export interface CardImplementation {
+  id: string;
+  cardId: string;
+  language: CardLanguage;
+  code: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Card {
   id: string;
   title: string;
   classification: CardClassification;
   difficulty?: CardDifficulty;
-  code: string;
   explanation: string;
   timeComplexity?: string;
   spaceComplexity?: string;
@@ -21,6 +29,9 @@ export interface Card {
   useCases?: string[];
   relatedProblems?: string[];
   dateAdded?: string; // ISO date string for sorting
-  language?: CardLanguage;
+  implementations: CardImplementation[];
 }
+
+export type CardInput = Omit<Card, 'id' | 'dateAdded' | 'implementations'>;
+export type CardImplementationInput = Pick<CardImplementation, 'language' | 'code'>;
 
