@@ -40,15 +40,15 @@ export const LANGUAGES: readonly CardLanguage[] = [
  * Difficulty color mapping
  */
 export const DIFFICULTY_COLORS: Record<CardDifficulty, string> = {
-  easy: '#3eb870',
-  medium: '#c99a1c',
-  hard: '#c65a5a',
+  easy: '#8bcf8f',
+  medium: '#f5b63f',
+  hard: '#ff6b61',
 } as const;
 
 /**
  * Default difficulty color for undefined/null values
  */
-export const DEFAULT_DIFFICULTY_COLOR = '#6b7280';
+export const DEFAULT_DIFFICULTY_COLOR = '#6f767d';
 
 /**
  * Formats a classification name for display

@@ -4,14 +4,14 @@
 
 @layer base {
   :root {
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     line-height: 1.5;
     font-weight: 400;
-    letter-spacing: 0.01em;
+    letter-spacing: -0.01em;
 
     color-scheme: dark;
-    color: #e8eaed;
-    background-color: #202124;
+    color: #f2f3ef;
+    background-color: #08090a;
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -23,15 +23,203 @@
     box-sizing: border-box;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
-    background-color: #202124;
+    overflow-x: hidden;
+    background: #08090a;
+  }
+
+  body::before {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    content: '';
+    opacity: 0.24;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(to bottom, black, transparent 82%);
   }
 
   #root {
     min-height: 100vh;
-    background-color: #202124;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    color: #08090a;
+    background: #f5b63f;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #090a0b;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #292e33;
+    border: 2px solid #090a0b;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #41484f;
+  }
+}
+
+@layer components {
+  .site-container {
+    @apply mx-auto w-full max-w-[1480px] px-5 sm:px-8 lg:px-12;
+  }
+
+  .spec-label {
+    @apply font-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] text-text-tertiary;
+  }
+
+  .panel {
+    @apply border border-border bg-surface;
+  }
+
+  .button {
+    @apply inline-flex min-h-[42px] items-center justify-center gap-2 border px-4 py-2 font-mono text-xs font-medium uppercase tracking-[0.08em] transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-45;
+  }
+
+  .button-primary {
+    @apply button border-accent bg-accent text-background hover:border-accent-hover hover:bg-accent-hover;
+  }
+
+  .button-secondary {
+    @apply button border-border-bright bg-surface-soft text-text-primary hover:border-text-secondary hover:bg-surface-raised;
+  }
+
+  .button-ghost {
+    @apply button border-transparent bg-transparent text-text-secondary hover:border-border hover:bg-surface-soft hover:text-text-primary;
+  }
+
+  .button-danger {
+    @apply button border-error/50 bg-error/10 text-error hover:border-error hover:bg-error/15;
+  }
+
+  .icon-button {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center border border-border bg-surface text-text-secondary transition-colors duration-150 hover:border-border-bright hover:bg-surface-soft hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+  }
+
+  .field-label {
+    @apply mb-2 block font-mono text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-text-secondary;
+  }
+
+  .field-control {
+    @apply w-full border border-border bg-background px-3.5 py-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-tertiary focus:border-accent focus:bg-surface;
+  }
+
+  .filter-chip {
+    @apply inline-flex min-h-9 items-center border border-border bg-background px-3 font-mono text-[0.6875rem] uppercase tracking-[0.06em] text-text-secondary transition-colors hover:border-border-bright hover:bg-surface-soft hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+  }
+
+  .filter-chip-active {
+    @apply border-accent bg-accent text-background hover:border-accent-hover hover:bg-accent-hover hover:text-background;
+  }
+
+  .metadata-chip {
+    @apply inline-flex items-center gap-1.5 border border-border bg-background/70 px-2.5 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.06em] text-text-secondary;
+  }
+
+  .modal-backdrop {
+    @apply fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6;
+    animation: backdrop-in 160ms ease-out both;
+  }
+
+  .modal-panel {
+    @apply border border-border bg-surface shadow-modal;
+    animation: panel-in 180ms ease-out both;
+  }
+
+  .section-rule {
+    @apply relative border-t border-border;
+  }
+
+  .section-rule::before {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 5px;
+    height: 5px;
+    content: '';
+    background: #f5b63f;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-surface-soft;
+  }
+
+  .skeleton::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.05),
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  to { transform: translateX(100%); }
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

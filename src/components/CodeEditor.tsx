@@ -1,18 +1,39 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { getMonacoLanguage } from '../utils/monacoLanguage';
+import { CheckIcon, CopyIcon, PlayIcon, RefreshIcon, XIcon } from './ui/Icons';
 
 interface CodeEditorProps {
   initialCode: string;
   language: string;
+  onChange?: (code: string) => void;
+  showToolbar?: boolean;
+  showRunButton?: boolean;
+  showOutput?: boolean;
+  height?: string;
+  readOnly?: boolean;
 }
 
 const EXECUTOR_URL = 'https://executor.charles-bai.com/execute';
 
-export function CodeEditor({ initialCode, language }: CodeEditorProps) {
+export function CodeEditor({
+  initialCode,
+  language,
+  onChange,
+  showToolbar = true,
+  showRunButton = true,
+  showOutput = true,
+  height = '500px',
+  readOnly = false,
+}: CodeEditorProps) {
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setCode(initialCode);
+  }, [initialCode]);
 
   const handleRun = async () => {
     setLoading(true);
@@ -44,48 +65,170 @@ export function CodeEditor({ initialCode, language }: CodeEditorProps) {
     }
   };
 
-  return (
-    <div className="flex flex-col h-[500px] border border-[#374151] rounded-md bg-code-bg overflow-hidden">
-      {/* Toolbar */}
-      <div className="flex justify-between items-center px-4 py-2 bg-[#252526] border-b border-[#374151]">
-        <span className="text-[#9ca3af] text-xs font-mono uppercase tracking-[0.05em]">
-          {language}
-        </span>
-        <button 
-          onClick={handleRun} 
-          disabled={loading}
-          className="px-4 py-1.5 rounded text-sm font-medium border-none cursor-pointer transition-colors duration-200 bg-[#15803d] text-white hover:bg-[#16a34a] disabled:bg-[#4b5563] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? 'Executing...' : 'Run Code'}
-        </button>
-      </div>
+  const handleCodeChange = (value?: string) => {
+    const nextCode = value || '';
+    setCode(nextCode);
+    onChange?.(nextCode);
+  };
 
-      {/* Editor */}
-      <div className="flex-1">
-        <Editor 
-          height="100%" 
-          defaultLanguage={getMonacoLanguage(language)} 
-          value={code} 
-          theme="vs-dark"
-          onChange={(val) => setCode(val || '')}
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const handleReset = () => {
+    setCode(initialCode);
+    setOutput('');
+    onChange?.(initialCode);
+  };
+
+  return (
+    <div
+      className="flex flex-col overflow-hidden border border-border bg-code-bg"
+      style={{ height }}
+    >
+      {showToolbar && (
+        <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-border bg-surface px-3 sm:px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex gap-1.5" aria-hidden="true">
+              <span className="h-2 w-2 rounded-full bg-error/70" />
+              <span className="h-2 w-2 rounded-full bg-warning/70" />
+              <span className="h-2 w-2 rounded-full bg-success/70" />
+            </div>
+            <span className="truncate font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-text-secondary">
+              main.{getMonacoLanguage(language)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="button-ghost min-h-9 px-2.5"
+              aria-label="Copy code"
+              title="Copy code"
+            >
+              {copied ? (
+                <CheckIcon className="h-3.5 w-3.5 text-success" />
+              ) : (
+                <CopyIcon className="h-3.5 w-3.5" />
+              )}
+              <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="button-ghost min-h-9 px-2.5"
+                aria-label="Reset code"
+                title="Reset code"
+              >
+                <RefreshIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+            )}
+            {showRunButton && (
+            <button
+                type="button"
+              onClick={handleRun}
+              disabled={loading}
+                className="button-primary min-h-9 px-3"
+            >
+                <PlayIcon className="h-3.5 w-3.5" />
+                {loading ? 'Running' : 'Run'}
+            </button>
+          )}
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-0 flex-1">
+        <Editor
+          height="100%"
+          language={getMonacoLanguage(language)}
+          value={code}
+          theme="toolbox-dark"
+          beforeMount={(monaco) => {
+            monaco.editor.defineTheme('toolbox-dark', {
+              base: 'vs-dark',
+              inherit: true,
+              rules: [
+                { token: 'comment', foreground: '6F767D', fontStyle: 'italic' },
+                { token: 'keyword', foreground: 'F5B63F' },
+                { token: 'string', foreground: '9BC89E' },
+                { token: 'number', foreground: '7AA7FF' },
+                { token: 'type', foreground: 'D7A7FF' },
+              ],
+              colors: {
+                'editor.background': '#090B0D',
+                'editor.foreground': '#D7DADC',
+                'editorLineNumber.foreground': '#3F454B',
+                'editorLineNumber.activeForeground': '#A8ADB2',
+                'editor.selectionBackground': '#3B2D14',
+                'editor.inactiveSelectionBackground': '#242018',
+                'editorCursor.foreground': '#F5B63F',
+                'editor.lineHighlightBackground': '#101316',
+                'editorIndentGuide.background1': '#20252A',
+                'editorIndentGuide.activeBackground1': '#41484F',
+              },
+            });
+          }}
+          onChange={handleCodeChange}
           options={{
             minimap: { enabled: false },
             fontSize: 14,
+            fontFamily: "'IBM Plex Mono', Consolas, monospace",
+            fontLigatures: true,
+            lineHeight: 22,
+            padding: { top: 18, bottom: 18 },
             scrollBeyondLastLine: false,
             automaticLayout: true,
+            readOnly,
+            renderLineHighlight: 'line',
+            smoothScrolling: true,
+            tabSize: 2,
+            wordWrap: 'on',
           }}
         />
       </div>
 
-      {/* Console Output */}
-      <div className="h-32 bg-black border-t border-[#374151] flex flex-col">
-        <div className="px-4 py-1 bg-[#1e1e1e] text-xs text-[#6b7280] font-mono border-b border-[#1f2937]">
-          TERMINAL
+      {showOutput && (
+        <div className="flex h-36 shrink-0 flex-col border-t border-border bg-black">
+          <div className="flex min-h-9 items-center justify-between border-b border-border bg-surface px-4">
+            <div className="flex items-center gap-2">
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  loading ? 'bg-warning' : output ? 'bg-success' : 'bg-text-tertiary'
+                }`}
+              />
+              <span className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-text-tertiary">
+                Console / stdout
+              </span>
+            </div>
+            {output && !loading && (
+              <button
+                type="button"
+                onClick={() => setOutput('')}
+                className="text-text-tertiary transition-colors hover:text-text-primary"
+                aria-label="Clear console"
+              >
+                <XIcon className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <pre
+            className="m-0 flex-1 overflow-auto whitespace-pre-wrap px-4 py-3 font-mono text-xs leading-5 text-code-text"
+            aria-live="polite"
+          >
+            {output || (
+              <span className="text-text-tertiary">
+                Ready. Execute the current buffer to inspect its output.
+              </span>
+            )}
+          </pre>
         </div>
-        <pre className="flex-1 px-4 py-4 text-[#d1d5db] font-mono text-sm overflow-auto whitespace-pre-wrap">
-          {output || <span className="text-[#4b5563] italic">Output will appear here...</span>}
-        </pre>
-      </div>
+      )}
     </div>
   );
 }

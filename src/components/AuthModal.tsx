@@ -1,114 +1,190 @@
+import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { CodeIcon, LockIcon, LogOutIcon, XIcon } from './ui/Icons';
+import { Modal } from './ui/Modal';
 
 interface AuthModalProps {
   onClose: () => void;
 }
 
+function GoogleIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
+}
+
 export function AuthModal({ onClose }: AuthModalProps) {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleSignIn = async () => {
+    setSubmitting(true);
+    setActionError(null);
     try {
       await signInWithGoogle();
-      // Don't close modal immediately - wait for redirect
     } catch (error) {
       console.error('Sign in error:', error);
+      setActionError(error instanceof Error ? error.message : 'Unable to start sign in.');
+      setSubmitting(false);
     }
   };
 
   const handleSignOut = async () => {
+    setSubmitting(true);
+    setActionError(null);
     try {
       await signOut();
       onClose();
     } catch (error) {
       console.error('Sign out error:', error);
+      setActionError(error instanceof Error ? error.message : 'Unable to sign out.');
+      setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4" onClick={onClose}>
-        <div className="bg-surface border-none rounded-lg w-full max-w-md flex flex-col shadow-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="p-8">
-            <p>Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 bg-black/60 z-[1000] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-surface border-none rounded-lg w-full max-w-md flex flex-col shadow-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center px-8 py-6 border-b border-border">
-          <h2 className="m-0 text-2xl font-normal text-text-primary">{user ? 'Account' : 'Sign In'}</h2>
-          <button className="bg-transparent border-none text-text-tertiary text-[2rem] cursor-pointer leading-none p-0 w-8 h-8 flex items-center justify-center transition-colors duration-200 hover:text-text-primary" onClick={onClose}>×</button>
+    <Modal
+      onClose={onClose}
+      labelledBy="auth-modal-title"
+      className="max-h-[calc(100vh-1.5rem)] w-full max-w-[480px] overflow-y-auto"
+    >
+      <header className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+        <div>
+          <span className="spec-label mb-2 block text-accent">
+            {user ? 'Identity / Active' : 'Identity / Restricted'}
+          </span>
+          <h2
+            id="auth-modal-title"
+            className="m-0 font-display text-2xl font-medium tracking-[-0.03em] text-text-primary"
+          >
+            {user ? 'Your account' : 'Operator sign in'}
+          </h2>
         </div>
+        <button
+          type="button"
+          className="icon-button"
+          onClick={onClose}
+          aria-label="Close account dialog"
+        >
+          <XIcon className="h-5 w-5" />
+        </button>
+      </header>
 
-        <div className="p-8">
-          {user ? (
-            <>
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
-                {user.user_metadata?.avatar_url && (
+      <div className="p-6 sm:p-8">
+        {loading ? (
+          <div className="space-y-4" aria-label="Loading account">
+            <div className="skeleton h-16 w-full" />
+            <div className="skeleton h-11 w-full" />
+          </div>
+        ) : user ? (
+          <>
+            <div className="flex items-center gap-4 border border-border bg-background p-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden border border-border-bright bg-surface-soft">
+                {user.user_metadata?.avatar_url ? (
                   <img
                     src={user.user_metadata.avatar_url}
-                    alt={user.email || 'User'}
-                    className="w-12 h-12 rounded-full border-2 border-border"
+                    alt=""
+                    className="h-full w-full object-cover"
                   />
+                ) : (
+                  <span className="font-display text-lg text-accent">
+                    {(user.email || 'U').charAt(0).toUpperCase()}
+                  </span>
                 )}
-                <div className="flex-1">
-                  <p className="m-0 mb-1 text-text-primary text-base font-medium">
-                    {user.user_metadata?.full_name || user.email}
-                  </p>
-                  <p className="m-0 text-text-tertiary text-sm">{user.email}</p>
-                </div>
               </div>
-              <button
-                className="w-full px-6 py-3 border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-3 bg-error text-text-primary hover:bg-error-hover"
-                onClick={handleSignOut}
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-text-secondary mb-6 text-sm leading-6">
-                Sign in with Google to create, edit, and delete cards.
-              </p>
-              <button
-                className="w-full px-6 py-3 border-none rounded text-sm font-medium cursor-pointer transition-all duration-200 flex items-center justify-center gap-3 bg-white text-background hover:bg-[#f8f9fa] hover:shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
-                onClick={handleSignIn}
-              >
-                <svg
-                  className="flex-shrink-0"
-                  viewBox="0 0 24 24"
-                  width="20"
-                  height="20"
-                >
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Sign in with Google
-              </button>
-            </>
-          )}
-        </div>
+              <div className="min-w-0">
+                <p className="m-0 truncate font-display text-base font-medium text-text-primary">
+                  {user.user_metadata?.full_name || 'Authenticated operator'}
+                </p>
+                <p className="mb-0 mt-1 truncate font-mono text-[0.6875rem] text-text-tertiary">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+
+            <div className="my-6 grid grid-cols-2 gap-px bg-border">
+              <div className="bg-background p-4">
+                <span className="spec-label block">Access</span>
+                <span className="mt-2 flex items-center gap-2 font-mono text-xs text-success">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                  Editor
+                </span>
+              </div>
+              <div className="bg-background p-4">
+                <span className="spec-label block">Provider</span>
+                <span className="mt-2 block font-mono text-xs text-text-secondary">Google</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="button-danger w-full"
+              onClick={handleSignOut}
+              disabled={submitting}
+            >
+              <LogOutIcon className="h-4 w-4" />
+              {submitting ? 'Signing out' : 'Sign out'}
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="mb-7 grid h-14 w-14 place-items-center border border-accent/40 bg-accent/10">
+              <LockIcon className="h-6 w-6 text-accent" />
+            </div>
+            <p className="m-0 text-base leading-7 text-text-secondary">
+              Browse and execute every concept without an account. Sign in only when
+              you want to create, edit, or maintain the library.
+            </p>
+
+            <div className="my-7 border-y border-border">
+              {[
+                'Create new concept cards',
+                'Maintain explanations and metadata',
+                'Edit executable implementations',
+              ].map(item => (
+                <div key={item} className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
+                  <CodeIcon className="h-4 w-4 text-accent" />
+                  <span className="text-sm text-text-secondary">{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="button w-full border-white bg-white text-background hover:bg-[#e7e7e2]"
+              onClick={handleSignIn}
+              disabled={submitting}
+            >
+              <GoogleIcon />
+              {submitting ? 'Redirecting' : 'Continue with Google'}
+            </button>
+          </>
+        )}
+
+        {actionError && (
+          <p className="mb-0 mt-4 border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
+            {actionError}
+          </p>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }
-

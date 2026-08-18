@@ -1,3 +1,5 @@
+import { ChevronLeftIcon, ChevronRightIcon } from './ui/Icons';
+
 interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
@@ -16,7 +18,7 @@ export function Pagination({
   onPageChange,
   onItemsPerPageChange
 }: PaginationProps) {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
@@ -70,53 +72,37 @@ export function Pagination({
     return pages;
   };
 
-  if (totalPages <= 1) {
-    return (
-      <div className="flex justify-between items-center py-3 flex-wrap gap-3 flex-col md:flex-row">
-        <div className="text-[#9a9a9a] text-xs">
-          Showing {startItem}-{endItem} of {totalItems} cards
-        </div>
-        <div className="flex items-center gap-4 flex-wrap flex-col md:flex-row">
-          <label className="flex items-center gap-1.5 text-xs text-[#b5b5b5] justify-center md:justify-start">
-            Items per page:
-            <select
-              value={itemsPerPage}
-              onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-              className="px-1.5 py-1.5 border border-dark-border bg-dark-surface rounded text-xs cursor-pointer text-[#b5b5b5] hover:border-[#4a4a4a] hover:bg-[#3a3a3a] focus:outline-none focus:border-[#5a5a5a] focus:shadow-[0_0_0_2px_rgba(90,90,90,0.2)]"
-            >
-              {ITEMS_PER_PAGE_OPTIONS.map(option => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex justify-between items-center py-3 flex-wrap gap-3 flex-col md:flex-row">
-      <div className="text-[#9a9a9a] text-xs">
-        Showing {startItem}-{endItem} of {totalItems} cards
+    <div className="mt-8 flex flex-col gap-5 border-y border-border py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-text-tertiary">
+        Index <span className="text-text-primary">{String(startItem).padStart(2, '0')}</span>
+        {' — '}
+        <span className="text-text-primary">{String(endItem).padStart(2, '0')}</span>
+        {' / '}
+        {String(totalItems).padStart(2, '0')}
       </div>
-      <div className="flex items-center gap-4 flex-wrap flex-col md:flex-row">
-        <div className="flex gap-1 items-center justify-center md:justify-start flex-wrap">
+
+      <div className="flex flex-wrap items-center gap-4">
+        {totalPages > 1 && (
+          <nav className="flex items-center gap-1" aria-label="Concept pages">
           <button
+              type="button"
             onClick={handlePrevious}
             disabled={currentPage === 1}
-            className="px-2 py-1.5 border border-dark-border bg-dark-surface rounded cursor-pointer text-xs text-[#b5b5b5] transition-all duration-200 min-w-[2rem] hover:bg-[#3a3a3a] hover:border-[#4a4a4a] hover:text-[#e5e5e5] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="icon-button h-10 w-10"
             aria-label="Previous page"
           >
-            Previous
+              <ChevronLeftIcon className="h-4 w-4" />
           </button>
 
           {getPageNumbers().map((page, idx) => {
             if (page === 'ellipsis') {
               return (
-                <span key={`ellipsis-${idx}`} className="px-1.5 py-1.5 text-[#6a6a6a] select-none text-xs">
-                  ...
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="grid h-10 w-8 place-items-center font-mono text-xs text-text-tertiary"
+                  >
+                    ···
                 </span>
               );
             }
@@ -124,12 +110,13 @@ export function Pagination({
             const pageNum = page;
             return (
               <button
+                  type="button"
                 key={pageNum}
                 onClick={() => handlePageClick(pageNum)}
-                className={`px-2 py-1.5 border rounded cursor-pointer text-xs transition-all duration-200 min-w-[2rem] ${
+                  className={`h-10 min-w-10 border px-2 font-mono text-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   currentPage === pageNum
-                    ? 'bg-[#3a3a3a] text-[#e5e5e5] border-[#5a5a5a] hover:bg-[#4a4a4a] hover:border-[#6a6a6a]'
-                    : 'border-dark-border bg-dark-surface text-[#b5b5b5] hover:bg-[#3a3a3a] hover:border-[#4a4a4a] hover:text-[#e5e5e5]'
+                      ? 'border-accent bg-accent text-background'
+                      : 'border-border bg-surface text-text-secondary hover:border-border-bright hover:bg-surface-soft hover:text-text-primary'
                 }`}
                 aria-label={`Page ${pageNum}`}
                 aria-current={currentPage === pageNum ? 'page' : undefined}
@@ -140,21 +127,23 @@ export function Pagination({
           })}
 
           <button
+              type="button"
             onClick={handleNext}
             disabled={currentPage === totalPages}
-            className="px-2 py-1.5 border border-dark-border bg-dark-surface rounded cursor-pointer text-xs text-[#b5b5b5] transition-all duration-200 min-w-[2rem] hover:bg-[#3a3a3a] hover:border-[#4a4a4a] hover:text-[#e5e5e5] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="icon-button h-10 w-10"
             aria-label="Next page"
           >
-            Next
+              <ChevronRightIcon className="h-4 w-4" />
           </button>
-        </div>
+          </nav>
+        )}
 
-        <label className="flex items-center gap-1.5 text-xs text-[#b5b5b5] justify-center md:justify-start">
-          Items per page:
+        <label className="flex items-center gap-2">
+          <span className="spec-label whitespace-nowrap">Per page</span>
           <select
             value={itemsPerPage}
             onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-            className="px-1.5 py-1.5 border border-dark-border bg-dark-surface rounded text-xs cursor-pointer text-[#b5b5b5] hover:border-[#4a4a4a] hover:bg-[#3a3a3a] focus:outline-none focus:border-[#5a5a5a] focus:shadow-[0_0_0_2px_rgba(90,90,90,0.2)]"
+            className="h-10 cursor-pointer border border-border bg-surface px-3 font-mono text-xs text-text-primary outline-none transition-colors hover:border-border-bright focus:border-accent"
           >
             {ITEMS_PER_PAGE_OPTIONS.map(option => (
               <option key={option} value={option}>

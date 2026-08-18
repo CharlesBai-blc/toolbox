@@ -61,13 +61,31 @@ export function useFilters(cards: Card[]) {
 
     // Apply search query
     if (filters.searchQuery.trim()) {
-      const query = filters.searchQuery.toLowerCase();
-      filtered = filtered.filter(card =>
-        card.title.toLowerCase().includes(query) ||
-        card.explanation.toLowerCase().includes(query) ||
-        card.code.toLowerCase().includes(query) ||
-        card.tags.some(tag => tag.toLowerCase().includes(query))
-      );
+      const query = filters.searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(card => {
+        const searchableText = [
+          card.title,
+          card.explanation,
+          card.code,
+          card.classification,
+          card.difficulty,
+          card.language,
+          card.timeComplexity,
+          card.spaceComplexity,
+          ...card.tags,
+          ...(card.useCases || []),
+          ...(card.relatedProblems || []),
+          ...(card.methods || []).flatMap(method => [
+            method.name,
+            method.timeComplexity,
+          ]),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        return searchableText.includes(query);
+      });
     }
 
     // Apply sorting

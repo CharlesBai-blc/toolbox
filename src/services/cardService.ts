@@ -124,21 +124,21 @@ export async function updateCard(id: string, updates: Partial<Omit<Card, 'id'>>)
   
   if (updates.title !== undefined) updateData.title = updates.title;
   if (updates.classification !== undefined) updateData.classification = updates.classification;
-  if (updates.difficulty !== undefined) updateData.difficulty = updates.difficulty || null;
+  if ('difficulty' in updates) updateData.difficulty = updates.difficulty || null;
   if (updates.code !== undefined) updateData.code = updates.code;
   if (updates.explanation !== undefined) updateData.explanation = updates.explanation;
-  if (updates.timeComplexity !== undefined) updateData.time_complexity = updates.timeComplexity || null;
-  if (updates.spaceComplexity !== undefined) updateData.space_complexity = updates.spaceComplexity || null;
-  if (updates.methods !== undefined) {
+  if ('timeComplexity' in updates) updateData.time_complexity = updates.timeComplexity || null;
+  if ('spaceComplexity' in updates) updateData.space_complexity = updates.spaceComplexity || null;
+  if ('methods' in updates) {
     updateData.methods = updates.methods
       ? updates.methods.map(m => ({ name: m.name, time_complexity: m.timeComplexity }))
       : null;
   }
   if (updates.tags !== undefined) updateData.tags = updates.tags;
-  if (updates.useCases !== undefined) updateData.use_cases = updates.useCases || null;
-  if (updates.relatedProblems !== undefined) updateData.related_problems = updates.relatedProblems || null;
-  if (updates.dateAdded !== undefined) updateData.date_added = updates.dateAdded || null;
-  if (updates.language !== undefined) updateData.language = updates.language || null;
+  if ('useCases' in updates) updateData.use_cases = updates.useCases || null;
+  if ('relatedProblems' in updates) updateData.related_problems = updates.relatedProblems || null;
+  if ('dateAdded' in updates) updateData.date_added = updates.dateAdded || null;
+  if ('language' in updates) updateData.language = updates.language || null;
 
   const { data, error } = await supabase
     .from('cards')

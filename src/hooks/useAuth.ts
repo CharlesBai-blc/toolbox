@@ -1,13 +1,21 @@
-import { useState, useEffect } from 'react';
+import { createContext, createElement, useContext, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 
 import { supabase } from '../lib/supabase';
 
-/**
- * Custom hook for managing authentication state
- * @returns Authentication state and methods
- */
-export function useAuth() {
+interface AuthContextValue {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  isAuthenticated: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,10 +41,12 @@ export function useAuth() {
   }, []);
 
   const signInWithGoogle = async () => {
+    const redirectTo =
+      import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo,
       },
     });
     if (error) {
@@ -53,13 +63,31 @@ export function useAuth() {
     }
   };
 
-  return {
-    user,
-    session,
-    loading,
-    isAuthenticated: !!user,
-    signInWithGoogle,
-    signOut,
-  };
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      session,
+      loading,
+      isAuthenticated: !!user,
+      signInWithGoogle,
+      signOut,
+    }),
+    [user, session, loading],
+  );
+
+  return createElement(AuthContext.Provider, { value }, children);
+}
+
+/**
+ * Provides one shared Supabase auth session and subscription to the app.
+ */
+export function useAuth() {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+
+  return context;
 }
 
